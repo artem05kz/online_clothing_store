@@ -1,4 +1,4 @@
-package com.example.online_clothing_store;
+package com.example.online_clothing_store.Adapter;
 
 import android.content.Intent;
 import android.view.LayoutInflater;
@@ -12,6 +12,9 @@ import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
+
+import com.example.online_clothing_store.ProductDetailActivity;
+import com.example.online_clothing_store.R;
 import com.example.online_clothing_store.database.entities.Product;
 import com.squareup.picasso.Picasso;
 

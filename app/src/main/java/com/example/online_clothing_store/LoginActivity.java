@@ -71,11 +71,20 @@ public class LoginActivity extends AppCompatActivity {
                 User user = db.userDao().getUserByEmail(email);
                 runOnUiThread(() -> {
                     progressDialog.dismiss();
-                    if (user != null && PasswordHasher.check(password, user.getPasswordHash())) {
-                        startActivity(new Intent(this, MainActivity.class));
-                        finish();
+                    if (user != null) {
+                        try {
+                            if (PasswordHasher.check(password, user.getPasswordHash())) {
+                                startActivity(new Intent(this, MainActivity.class));
+                                finish();
+                            } else {
+                                showError(etPassword, "Неверный пароль");
+                            }
+                        } catch (Exception e) {
+                            showError(etPassword, "Ошибка проверки пароля");
+                            Log.e("Login", "Password check error", e);
+                        }
                     } else {
-                        showError(etPassword, "Неверный email или пароль");
+                        showError(etEmail, "Пользователь не найден");
                     }
                 });
             } catch (Exception e) {

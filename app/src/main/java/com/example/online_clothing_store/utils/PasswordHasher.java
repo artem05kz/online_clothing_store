@@ -1,5 +1,7 @@
 package com.example.online_clothing_store.utils;
 
+import android.util.Log;
+
 import org.mindrot.jbcrypt.BCrypt;
 
 public class PasswordHasher {
@@ -8,6 +10,11 @@ public class PasswordHasher {
     }
 
     public static boolean check(String password, String hashedPassword) {
-        return BCrypt.checkpw(password, hashedPassword);
+        try {
+            return BCrypt.checkpw(password, hashedPassword);
+        } catch (Exception e) {
+            Log.e("PasswordHasher", "Error checking password", e);
+            return false;
+        }
     }
 }

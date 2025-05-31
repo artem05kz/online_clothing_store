@@ -23,4 +23,10 @@ public interface ProductDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(Product... products);
+
+    @Query("SELECT * FROM products ORDER BY id DESC LIMIT 10")
+    List<Product> getNewArrivals();
+
+    @Query("SELECT * FROM products WHERE rating > 4.5 ORDER BY RANDOM() LIMIT 8")
+    List<Product> getRecommendedProducts();
 }

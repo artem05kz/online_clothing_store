@@ -60,7 +60,7 @@ public class RegisterActivity extends AppCompatActivity {
             User newUser = new User();
             newUser.setName(name);
             newUser.setEmail(email);
-            newUser.setPasswordHash(password);
+            newUser.setPasswordHash(PasswordHasher.hash(password));
 
             db.userDao().insert(newUser);
 

@@ -1,36 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background">
+    android:background="@color/background"
+    android:fitsSystemWindows="true">
 
-    <!-- Основной контент с прокруткой -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/background"
+            app:title="Dynamic Lifestyle"
+            app:titleTextColor="@color/black"
+            app:titleTextAppearance="@style/TextAppearance.AppCompat.Title"/>
+
+    </com.google.android.material.appbar.AppBarLayout>
+
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollView"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/menu">
+        android:layout_height="match_parent"
+        android:padding="16dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="8dp">
+            android:orientation="vertical">
 
-            <!-- Заголовок магазина -->
+            <!-- Приветствие пользователя -->
             <TextView
+                android:id="@+id/tvWelcome"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Dynamic Lifestyle"
-                android:fontFamily="@font/bebas_neue_cyrillic"
-                android:textAlignment="center"
-                android:textSize="30dp"
-                android:textStyle="bold"
-                android:gravity="center"
+                android:text="Добро пожаловать!"
+                android:textSize="18sp"
+                android:textColor="@color/black"
                 android:layout_marginBottom="16dp"/>
 
             <!-- Поиск и поддержка -->
@@ -43,39 +56,60 @@
                 <EditText
                     android:id="@+id/searchInput"
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
+                    android:layout_height="48dp"
                     android:layout_weight="1"
                     android:hint="Поиск..."
                     android:background="@drawable/edittext_rounded"
-                    android:paddingStart="16dp"/>
+                    android:paddingStart="16dp"
+                    android:textColorHint="@color/gray"
+                    android:textColor="@color/black"/>
 
                 <ImageButton
                     android:id="@+id/supportButton"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:src="@drawable/ic_faq"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:layout_marginStart="8dp"/>
+                    android:layout_marginStart="8dp"
+                    android:contentDescription="Поддержка"/>
             </LinearLayout>
 
             <!-- Баннеры -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Специальные предложения"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"
+                android:textColor="@color/black"/>
+
             <androidx.viewpager.widget.ViewPager
                 android:id="@+id/bannerPager"
                 android:layout_width="match_parent"
                 android:layout_height="180dp"
                 android:layout_marginBottom="16dp"
-                android:background="@color/backgroundDark"/>
+                android:background="@drawable/edittext_rounded"/>
+
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/tabDots"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                app:tabBackground="@drawable/tab_indicator"
+                app:tabGravity="center"
+                app:tabIndicatorHeight="0dp"
+                android:layout_marginBottom="16dp"/>
 
             <!-- Новые поступления -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Новые поступления"
-                android:fontFamily="@font/bebas_neue_cyrillic"
-                android:textAlignment="center"
-                android:textSize="26dp"
+                android:textSize="18sp"
                 android:textStyle="bold"
-                android:layout_marginBottom="8dp"/>
+                android:layout_marginBottom="8dp"
+                android:textColor="@color/black"/>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/newArrivalsList"
@@ -83,19 +117,18 @@
                 android:layout_height="240dp"
                 android:orientation="horizontal"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                android:layout_marginBottom="16dp"
-                android:background="@color/backgroundDark"/>
+                android:layout_marginBottom="24dp"/>
 
             <!-- Рекомендации -->
             <TextView
+                android:id="@+id/tvRecommendationsTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Рекомендации"
-                android:fontFamily="@font/bebas_neue_cyrillic"
-                android:textAlignment="center"
-                android:textSize="26dp"
+                android:text="Рекомендуем для вас"
+                android:textSize="18sp"
                 android:textStyle="bold"
-                android:layout_marginBottom="8dp"/>
+                android:layout_marginBottom="8dp"
+                android:textColor="@color/black"/>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recommendationsList"
@@ -103,90 +136,96 @@
                 android:layout_height="wrap_content"
                 app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
                 app:spanCount="2"
-                android:scrollbars="vertical"/>
-
+                android:scrollbars="vertical" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
     <!-- Фиксированное нижнее меню -->
     <LinearLayout
-        android:id="@+id/menu"
+        android:id="@+id/bottomAppBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:background="@color/backgroundDark"
-        android:paddingVertical="4dp"
-        app:layout_constraintBottom_toBottomOf="parent">
+        android:layout_gravity="bottom"
+        android:background="@color/background"
+        android:elevation="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp">
 
-        <FrameLayout
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1">
+            android:orientation="horizontal"
+            android:gravity="center">
 
-            <ImageButton
-                android:id="@+id/imageButtonHome"
-                android:layout_width="wrap_content"
+            <FrameLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:background="@android:color/transparent"
-                android:layout_gravity="center"
-                app:srcCompat="@drawable/ic_home"/>
-        </FrameLayout>
+                android:layout_weight="1">
 
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1">
+                <ImageButton
+                    android:id="@+id/imageButtonHome"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:background="@android:color/transparent"
+                    app:srcCompat="@drawable/ic_home" />
+            </FrameLayout>
 
-            <ImageButton
-                android:id="@+id/imageButtonHanger"
-                android:layout_width="wrap_content"
+            <FrameLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:background="@android:color/transparent"
-                android:layout_gravity="center"
-                app:srcCompat="@drawable/ic_hanger"/>
-        </FrameLayout>
+                android:layout_weight="1">
 
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1">
+                <ImageButton
+                    android:id="@+id/imageButtonHanger"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:background="@android:color/transparent"
+                    app:srcCompat="@drawable/ic_hanger" />
+            </FrameLayout>
 
-            <ImageButton
-                android:id="@+id/imageButtonWardrobe"
-                android:layout_width="wrap_content"
+            <FrameLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:background="@android:color/transparent"
-                android:layout_gravity="center"
-                app:srcCompat="@drawable/ic_wardrobe"/>
-        </FrameLayout>
+                android:layout_weight="1">
 
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1">
+                <ImageButton
+                    android:id="@+id/imageButtonWardrobe"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:background="@android:color/transparent"
+                    app:srcCompat="@drawable/ic_wardrobe" />
+            </FrameLayout>
 
-            <ImageButton
-                android:id="@+id/imageButtonCart"
-                android:layout_width="wrap_content"
+            <FrameLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:background="@android:color/transparent"
-                android:layout_gravity="center"
-                app:srcCompat="@drawable/ic_cart"/>
-        </FrameLayout>
+                android:layout_weight="1">
 
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1">
+                <ImageButton
+                    android:id="@+id/imageButtonCart"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:background="@android:color/transparent"
+                    app:srcCompat="@drawable/ic_cart" />
+            </FrameLayout>
 
-            <ImageButton
-                android:id="@+id/imageButtonProfile"
-                android:layout_width="wrap_content"
+            <FrameLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:background="@android:color/transparent"
-                android:layout_gravity="center"
-                app:srcCompat="@drawable/ic_profile"/>
-        </FrameLayout>
+                android:layout_weight="1">
+
+                <ImageButton
+                    android:id="@+id/imageButtonProfile"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:background="@android:color/transparent"
+                    app:srcCompat="@drawable/ic_profile" />
+            </FrameLayout>
+        </LinearLayout>
     </LinearLayout>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
