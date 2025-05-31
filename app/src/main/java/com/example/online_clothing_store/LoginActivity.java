@@ -74,7 +74,7 @@ public class LoginActivity extends AppCompatActivity {
                     if (user != null) {
                         try {
                             if (PasswordHasher.check(password, user.getPasswordHash())) {
-                                startActivity(new Intent(this, MainActivity.class));
+                                startActivity(new Intent(this, RecommendationsActivity.class));
                                 finish();
                             } else {
                                 showError(etPassword, "Неверный пароль");

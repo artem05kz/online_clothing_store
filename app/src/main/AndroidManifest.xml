@@ -35,6 +35,10 @@
             android:theme="@style/Theme.Online_clothing_store" />
 
         <activity
+            android:name=".RecommendationsActivity"
+            android:theme="@style/Theme.Online_clothing_store" />
+
+        <activity
             android:name=".ProductDetailActivity"
             android:theme="@style/Theme.Online_clothing_store"
             android:windowSoftInputMode="adjustResize"/>

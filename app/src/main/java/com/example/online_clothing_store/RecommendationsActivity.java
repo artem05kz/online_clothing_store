@@ -1,5 +1,6 @@
 package com.example.online_clothing_store;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
@@ -66,23 +67,28 @@ public class RecommendationsActivity extends AppCompatActivity {
     private void setupMenuButtons() {
         // Обработчики для нижнего меню
         findViewById(R.id.imageButtonHome).setOnClickListener(v -> {
-            // Уже на главной
+            // Уже на главной - обновляем страницу
+            loadProducts();
         });
 
         findViewById(R.id.imageButtonHanger).setOnClickListener(v -> {
-            // Переход к подбору одежды
+            // Переход в каталог для авторизованных
+            startActivity(new Intent(this, CatalogActivity.class));
         });
 
         findViewById(R.id.imageButtonWardrobe).setOnClickListener(v -> {
-            // Переход к гардеробу
+            // Переход в гардероб
+            startActivity(new Intent(this, WardrobeActivity.class));
         });
 
         findViewById(R.id.imageButtonCart).setOnClickListener(v -> {
             // Переход в корзину
+            startActivity(new Intent(this, CartActivity.class));
         });
 
         findViewById(R.id.imageButtonProfile).setOnClickListener(v -> {
             // Переход в профиль
+            startActivity(new Intent(this, ProfileActivity.class));
         });
     }
 }

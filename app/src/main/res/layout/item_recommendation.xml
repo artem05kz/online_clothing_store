@@ -13,11 +13,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
+        android:background="@color/whiteText"
         android:padding="8dp">
 
-        <ImageView
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/ivProductImage"
             android:layout_width="match_parent"
+            app:shapeAppearanceOverlay="@style/RoundedCorners"
             android:layout_height="150dp"
             android:scaleType="centerCrop"
             android:contentDescription="Изображение товара"

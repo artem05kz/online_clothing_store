@@ -119,32 +119,52 @@ public class CatalogActivity extends AppCompatActivity {
         }
     }
     private void setupMenuButtons() {
-        // Обработчики для нижнего меню
         findViewById(R.id.imageButtonHome).setOnClickListener(v -> {
-            // Уже на главной
+            if (isGuestMode) {
+                Toast.makeText(this,
+                        "Для использования этой функции требуется регистрация",
+                        Toast.LENGTH_SHORT).show();
+            } else {
+                startActivity(new Intent(this, RecommendationsActivity.class));
+            }
         });
-
         findViewById(R.id.imageButtonHanger).setOnClickListener(v -> {
-            showGuestMessage("Требуется регистрация");
+            if (isGuestMode) {
+                Toast.makeText(this,
+                        "Для использования этой функции требуется регистрация",
+                        Toast.LENGTH_SHORT).show();
+            } else {
+                startActivity(new Intent(this, CatalogActivity.class));
+            }
         });
-
         findViewById(R.id.imageButtonWardrobe).setOnClickListener(v -> {
-            showGuestMessage("Требуется регистрация");
+            if (isGuestMode) {
+                Toast.makeText(this,
+                        "Для использования этой функции требуется регистрация",
+                        Toast.LENGTH_SHORT).show();
+            } else {
+                startActivity(new Intent(this, WardrobeActivity.class));
+            }
         });
-
         findViewById(R.id.imageButtonCart).setOnClickListener(v -> {
-            showGuestMessage("Требуется регистрация");
+            if (isGuestMode) {
+                Toast.makeText(this,
+                        "Для использования этой функции требуется регистрация",
+                        Toast.LENGTH_SHORT).show();
+            } else {
+                startActivity(new Intent(this, CartActivity.class));
+            }
         });
 
         findViewById(R.id.imageButtonProfile).setOnClickListener(v -> {
             if (isGuestMode) {
-                // Переход на экран авторизации
                 startActivity(new Intent(this, LoginActivity.class));
                 finish();
             } else {
-                // Переход в профиль
+                startActivity(new Intent(this, ProfileActivity.class));
             }
         });
+
     }
 
     private void showGuestMessage(String message) {
