@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="4dp"
+    app:cardElevation="2dp"
+    app:cardCornerRadius="8dp"
+    android:background="@color/whiteText">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:padding="8dp"
+        android:background="@color/whiteText">
+
+        <ImageView
+            android:id="@+id/itemImage"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:scaleType="centerCrop"/>
+
+        <TextView
+            android:id="@+id/itemPrice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1200 ₽"
+            android:textSize="16sp"
+            android:layout_toRightOf="@id/itemImage"
+            android:layout_marginStart="16dp"/>
+
+        <TextView
+            android:id="@+id/itemName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Укороченный свитер"
+            android:layout_below="@id/itemPrice"
+            android:layout_toRightOf="@id/itemImage"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="4dp"/>
+
+        <TextView
+            android:id="@+id/itemSize"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Размер: M"
+            android:layout_below="@id/itemName"
+            android:layout_toRightOf="@id/itemImage"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="4dp"/>
+
+        <ImageButton
+            android:id="@+id/deleteButton"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_delete"
+            android:layout_alignParentEnd="true"
+            android:background="?attr/selectableItemBackgroundBorderless"/>
+
+        <Button
+            android:id="@+id/orderButton"
+            android:layout_width="110dp"
+            android:layout_height="35dp"
+            android:text="Заказать"
+            android:textSize="12dp"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            android:backgroundTint="@color/backgroundDark"/>
+
+    </RelativeLayout>
+</androidx.cardview.widget.CardView>
