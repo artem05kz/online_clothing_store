@@ -1,4 +1,124 @@
 package com.example.online_clothing_store;
 
-public class CartActivity {
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.Bundle;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import com.example.online_clothing_store.Adapter.CartAdapter;
+import com.example.online_clothing_store.database.AppDatabase;
+import com.example.online_clothing_store.database.entities.Cart;
+import com.example.online_clothing_store.database.entities.Product;
+import java.util.List;
+
+public class CartActivity extends AppCompatActivity {
+    private RecyclerView cartItemsList;
+    private TextView totalPrice;
+    private Button checkoutButton;
+    private EditText promoCodeInput;
+    private int currentUserId;
+    private AppDatabase db;
+    private List<Cart> cartItems;
+    private CartAdapter adapter;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_cart);
+
+        // Инициализация UI-элементов
+        cartItemsList = findViewById(R.id.cartItemsList);
+        totalPrice = findViewById(R.id.totalPrice);
+        checkoutButton = findViewById(R.id.checkoutButton);
+        promoCodeInput = findViewById(R.id.promoCodeInput);
+
+        // Получение ID пользователя
+        SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
+        currentUserId = prefs.getInt("user_id", -1);
+
+        if (currentUserId == -1) {
+            Toast.makeText(this, "Ошибка: пользователь не авторизован", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        // Инициализация базы данных
+        db = AppDatabase.getInstance(this);
+        cartItemsList.setLayoutManager(new LinearLayoutManager(this));
+
+        // Загрузка данных корзины
+        loadCartItems();
+
+        // Обработка кнопки "Заказать все"
+        checkoutButton.setOnClickListener(v -> {
+            startActivity(new Intent(this, CheckoutActivity.class));
+        });
+
+        // Обработка промокода (пример, если нужна функциональность)
+        promoCodeInput.setOnEditorActionListener((v, actionId, event) -> {
+            String promoCode = promoCodeInput.getText().toString().trim();
+            if (!promoCode.isEmpty()) {
+                Toast.makeText(this, "Промокод применён: " + promoCode, Toast.LENGTH_SHORT).show();
+            }
+            return false;
+        });
+    }
+
+    private void loadCartItems() {
+        new Thread(() -> {
+            cartItems = db.cartDao().getCartItemsByUserId(currentUserId);
+            runOnUiThread(() -> {
+                adapter = new CartAdapter(cartItems, this::onDeleteItem, this::onQuantityChanged);
+                cartItemsList.setAdapter(adapter);
+                updateTotalPrice();
+            });
+        }).start();
+    }
+
+    private void onDeleteItem(Cart cartItem) {
+        new Thread(() -> {
+            db.cartDao().delete(cartItem);
+            runOnUiThread(() -> {
+                cartItems.remove(cartItem);
+                adapter.notifyDataSetChanged();
+                updateTotalPrice();
+            });
+        }).start();
+    }
+
+    private void onQuantityChanged(Cart cartItem, int newQuantity) {
+        if (newQuantity <= 0) {
+            onDeleteItem(cartItem);
+            return;
+        }
+        new Thread(() -> {
+            cartItem.setQuantity(newQuantity);
+            db.cartDao().insert(cartItem); // Обновляем запись
+            runOnUiThread(() -> {
+                adapter.notifyDataSetChanged();
+                updateTotalPrice();
+            });
+        }).start();
+    }
+
+    private void updateTotalPrice() {
+        new Thread(() -> {
+            double total = 0;
+            for (Cart item : cartItems) {
+                Product product = db.productDao().getProductById(item.getProductId());
+                if (product != null) {
+                    total += product.getPrice() * item.getQuantity();
+                }
+            }
+            double finalTotal = total;
+            runOnUiThread(() -> {
+                totalPrice.setText(String.format("%.2f ₽", finalTotal));
+            });
+        }).start();
+    }
 }

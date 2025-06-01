@@ -7,7 +7,11 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity(tableName = "products",
+@Entity(
+        tableName = "products",
+        indices = {
+                @Index("category_id")
+        },
         foreignKeys = @ForeignKey(
                 entity = Category.class,
                 parentColumns = "id",

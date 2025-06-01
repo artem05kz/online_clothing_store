@@ -25,24 +25,32 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".RegisterActivity"
             android:exported="false" />
-
         <activity
             android:name=".CatalogActivity"
             android:theme="@style/Theme.Online_clothing_store" />
         <activity
             android:name=".ProfileActivity"
             android:theme="@style/Theme.Online_clothing_store" />
-
         <activity
             android:name=".RecommendationsActivity"
             android:theme="@style/Theme.Online_clothing_store" />
-
         <activity
             android:name=".ProductDetailActivity"
+            android:theme="@style/Theme.Online_clothing_store"
+            android:windowSoftInputMode="adjustResize"/>
+        <activity
+            android:name=".CartActivity"
+            android:theme="@style/Theme.Online_clothing_store"
+            android:windowSoftInputMode="adjustResize"/>
+        <activity
+            android:name=".CheckoutActivity"
+            android:theme="@style/Theme.Online_clothing_store"
+            android:windowSoftInputMode="adjustResize"/>
+        <activity
+            android:name=".EditProfileActivity"
             android:theme="@style/Theme.Online_clothing_store"
             android:windowSoftInputMode="adjustResize"/>
 

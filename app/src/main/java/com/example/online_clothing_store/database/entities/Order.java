@@ -3,9 +3,14 @@ package com.example.online_clothing_store.database.entities;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "orders",
+@Entity(
+        tableName = "orders",
+        indices = {
+                @Index("user_id") // Индекс для user_id
+        },
         foreignKeys = @ForeignKey(
                 entity = User.class,
                 parentColumns = "id",

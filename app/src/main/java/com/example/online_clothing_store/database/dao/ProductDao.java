@@ -29,4 +29,5 @@ public interface ProductDao {
 
     @Query("SELECT * FROM products WHERE rating > 4.5 ORDER BY RANDOM() LIMIT 8")
     List<Product> getRecommendedProducts();
+
 }

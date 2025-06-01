@@ -6,12 +6,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
-    android:fitsSystemWindows="true"
-    >
+    android:fitsSystemWindows="true">
 
     <!-- Заголовок -->
-
-    <!-- Панель фильтров и сортировки -->
     <TextView
         android:id="@+id/title"
         android:layout_width="wrap_content"
@@ -26,6 +23,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- Панель фильтров и сортировки -->
     <LinearLayout
         android:id="@+id/filterBar"
         android:layout_width="match_parent"
@@ -40,16 +38,16 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="фильтр"
-            android:backgroundTint="@color/backgroundDark"/>
+            android:backgroundTint="@color/backgroundDark" />
 
         <Button
             android:id="@+id/btnSort"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_marginStart="8dp"
             android:text="сортировать"
-            android:backgroundTint="@color/backgroundDark"
-            android:layout_marginStart="8dp"/>
+            android:backgroundTint="@color/backgroundDark" />
     </LinearLayout>
 
     <!-- Список товаров -->
@@ -60,23 +58,24 @@
         android:padding="8dp"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
         app:spanCount="2"
-        app:layout_constraintTop_toBottomOf="@id/filterBar"
         app:layout_constraintBottom_toTopOf="@id/bottomAppBar"
-        />
+        app:layout_constraintTop_toBottomOf="@id/filterBar" />
 
+    <!-- Фиксированное нижнее меню -->
     <LinearLayout
         android:id="@+id/bottomAppBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:backgroundTint="@color/background"
+        android:background="@color/background"
+        android:paddingTop="8dp"
         app:layout_constraintBottom_toBottomOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingVertical="8dp">
+            android:gravity="center"
+            android:orientation="horizontal">
 
             <FrameLayout
                 android:layout_width="0dp"

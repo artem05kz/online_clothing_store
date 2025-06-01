@@ -4,11 +4,17 @@ package com.example.online_clothing_store.database.entities;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
+import androidx.room.Index;
+
 import java.io.Serializable;
 
 @Entity(
         tableName = "favorites",
         primaryKeys = {"user_id", "product_id"},
+        indices = {
+                @Index("user_id"),
+                @Index("product_id")
+        },
         foreignKeys = {
                 @ForeignKey(
                         entity = User.class,

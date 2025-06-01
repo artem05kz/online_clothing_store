@@ -8,4 +8,6 @@ import java.util.List;
 public interface OrderDao {
     @Query("SELECT * FROM orders WHERE user_id = :userId ORDER BY order_date DESC")
     List<Order> getOrdersByUserId(int userId);
+    @Insert
+    long insert(Order order);
 }

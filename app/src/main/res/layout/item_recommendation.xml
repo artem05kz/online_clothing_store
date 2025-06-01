@@ -25,6 +25,14 @@
             android:contentDescription="Изображение товара"
             tools:src="@drawable/placeholder"/>
 
+        <ImageButton
+            android:id="@+id/ibFavorite"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_heart"
+            app:layout_constraintTop_toTopOf="@id/ivProductImage" />
+
         <TextView
             android:id="@+id/tvTitle"
             android:layout_width="match_parent"
@@ -45,5 +53,13 @@
             android:textColor="@color/black"
             android:text="1 999 ₽"
             android:layout_marginTop="4dp"/>
+        <ImageButton
+            android:id="@+id/ibAddToCart"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_cart"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvPrice" />
     </LinearLayout>
 </androidx.cardview.widget.CardView>

@@ -130,13 +130,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:background="@color/background"
-        android:elevation="8dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        app:layout_anchor="@id/nestedScrollView"
-        app:layout_anchorGravity="bottom">
+        android:paddingTop="8dp">
 
         <LinearLayout
             android:layout_width="match_parent"

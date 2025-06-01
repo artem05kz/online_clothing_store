@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS "favorites" (
 	"user_id"	INTEGER NOT NULL,
 	"product_id"	INTEGER NOT NULL,
 	PRIMARY KEY("user_id","product_id"),
-	FOREIGN KEY("product_id") REFERENCES "products"("id"),
-	FOREIGN KEY("user_id") REFERENCES "users"("id")
+	FOREIGN KEY("product_id") REFERENCES "products"("id") ON DELETE CASCADE,
+	FOREIGN KEY("user_id") REFERENCES "users"("id") ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS "order_items" (
 	"order_id"	INTEGER NOT NULL,
@@ -31,10 +31,10 @@ CREATE TABLE IF NOT EXISTS "order_items" (
 CREATE TABLE IF NOT EXISTS "orders" (
 	"id"	INTEGER NOT NULL,
 	"user_id"	INTEGER NOT NULL,
-	"order_date"	DATETIME DEFAULT CURRENT_TIMESTAMP,
+	"order_date"	TEXT DEFAULT CURRENT_TIMESTAMP,
 	"status"	TEXT DEFAULT 'В обработке',
 	PRIMARY KEY("id" AUTOINCREMENT),
-	FOREIGN KEY("user_id") REFERENCES "users"("id")
+	FOREIGN KEY("user_id") REFERENCES "users"("id") ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS "product_images" (
 	"id"	INTEGER NOT NULL,

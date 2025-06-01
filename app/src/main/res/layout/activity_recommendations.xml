@@ -46,7 +46,7 @@
                 android:textColor="@color/black"
                 android:layout_marginBottom="16dp"/>
 
-            <!-- Поиск и поддержка -->
+            <!-- Поиск -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -64,14 +64,6 @@
                     android:textColorHint="@color/gray"
                     android:textColor="@color/black"/>
 
-                <ImageButton
-                    android:id="@+id/supportButton"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@drawable/ic_faq"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:layout_marginStart="8dp"
-                    android:contentDescription="Поддержка"/>
             </LinearLayout>
 
             <!-- Баннеры -->
@@ -147,9 +139,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:background="@color/background"
-        android:elevation="8dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp">
+        android:paddingTop="8dp">
 
         <LinearLayout
             android:layout_width="match_parent"

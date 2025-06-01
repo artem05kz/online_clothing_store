@@ -4,11 +4,18 @@ package com.example.online_clothing_store.database.entities;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
+import androidx.room.Index;
+import androidx.room.PrimaryKey;
+
 import java.io.Serializable;
 
 @Entity(
         tableName = "order_items",
         primaryKeys = {"order_id", "product_id"},
+        indices = {
+                @Index("order_id"),
+                @Index("product_id")
+        },
         foreignKeys = {
                 @ForeignKey(
                         entity = Order.class,
@@ -33,6 +40,8 @@ public class OrderItem implements Serializable {
 
     @ColumnInfo(name = "quantity")
     private int quantity;
+
+    public OrderItem() {}
 
     // Геттеры и сеттеры
     public int getOrderId() { return orderId; }

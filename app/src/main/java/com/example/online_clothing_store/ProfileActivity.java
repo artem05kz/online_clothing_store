@@ -27,6 +27,7 @@ public class ProfileActivity extends AppCompatActivity {
     private TextView tvUserName, tvAddress;
     private LinearLayout favoritesContainer, ordersContainer;
     private int currentUserId;
+    private ImageButton ibEdit;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +48,7 @@ public class ProfileActivity extends AppCompatActivity {
         tvAddress = findViewById(R.id.tvAddress);
         favoritesContainer = findViewById(R.id.favoritesContainer);
         ordersContainer = findViewById(R.id.ordersContainer);
+        ibEdit = findViewById(R.id.ibEdit);
 
         // Кнопка редактирования профиля
         ImageButton ibEdit = findViewById(R.id.ibEdit);
@@ -56,12 +58,22 @@ public class ProfileActivity extends AppCompatActivity {
                     "Редактирование профиля",
                     Toast.LENGTH_SHORT).show();
         });
+        ibEdit.setOnClickListener(v -> {
+            startActivity(new Intent(this, EditProfileActivity.class));
+        });
         setupMenuButtons();
         loadUserData();
         loadFavorites();
-        loadOrders();
+        loadOrderHistory();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadUserData(); // Обновляем данные профиля после редактирования
+        loadOrderHistory();
+        loadFavorites();
+    }
     private void loadUserData() {
         new Thread(() -> {
             AppDatabase db = AppDatabase.getInstance(this);
@@ -119,28 +131,24 @@ public class ProfileActivity extends AppCompatActivity {
         }).start();
     }
 
-    private void loadOrders() {
+    private void loadOrderHistory() {
         new Thread(() -> {
             AppDatabase db = AppDatabase.getInstance(this);
-            OrderDao orderDao = db.orderDao();
-            List<Order> orders = orderDao.getOrdersByUserId(currentUserId);
-
+            List<Order> orders = db.orderDao().getOrdersByUserId(currentUserId);
             runOnUiThread(() -> {
-                ordersContainer.removeAllViews();
-                LayoutInflater inflater = LayoutInflater.from(this);
-
+                ordersContainer.removeAllViews(); // Очищаем контейнер перед добавлением
                 for (Order order : orders) {
-                    View orderView = inflater.inflate(R.layout.item_order, ordersContainer, false);
+                    View orderCard = LayoutInflater.from(this)
+                            .inflate(R.layout.item_order, ordersContainer, false);
+                    TextView tvOrderId = orderCard.findViewById(R.id.tvOrderId);
+                    TextView tvOrderDate = orderCard.findViewById(R.id.tvOrderDate);
+                    TextView tvOrderStatus = orderCard.findViewById(R.id.tvOrderStatus);
 
-                    TextView tvOrderId = orderView.findViewById(R.id.tvOrderId);
-                    TextView tvOrderDate = orderView.findViewById(R.id.tvOrderDate);
-                    TextView tvOrderStatus = orderView.findViewById(R.id.tvOrderStatus);
-
-                    tvOrderId.setText(String.format("Заказ #%d", order.getId()));
+                    tvOrderId.setText("Заказ #" + order.getId());
                     tvOrderDate.setText(order.getOrderDate());
                     tvOrderStatus.setText(order.getStatus());
 
-                    ordersContainer.addView(orderView);
+                    ordersContainer.addView(orderCard);
                 }
             });
         }).start();
@@ -151,7 +159,7 @@ public class ProfileActivity extends AppCompatActivity {
             // Уже на главной - обновляем страницу
             loadUserData();
             loadFavorites();
-            loadOrders();
+            loadOrderHistory();
         });
 
         findViewById(R.id.imageButtonHanger).setOnClickListener(v -> {

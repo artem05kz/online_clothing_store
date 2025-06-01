@@ -4,12 +4,18 @@ import androidx.annotation.NonNull;
 import androidx.room.*;
 
 import java.io.Serializable;
-@Entity(tableName = "product_images",
+@Entity(
+        tableName = "product_images",
+        indices = {
+                @Index("product_id")
+        },
         foreignKeys = @ForeignKey(
                 entity = Product.class,
                 parentColumns = "id",
                 childColumns = "product_id",
-                onDelete = ForeignKey.CASCADE))
+                onDelete = ForeignKey.CASCADE
+        )
+)
 public class ProductImage implements Serializable {
     @PrimaryKey(autoGenerate = true)
     private int id;
