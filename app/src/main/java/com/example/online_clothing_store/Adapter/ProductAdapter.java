@@ -15,17 +15,22 @@ import java.util.List;
 
 import com.example.online_clothing_store.ProductDetailActivity;
 import com.example.online_clothing_store.R;
+import com.example.online_clothing_store.database.AppDatabase;
+import com.example.online_clothing_store.database.dao.FavoriteDao;
+import com.example.online_clothing_store.database.entities.Favorite;
 import com.example.online_clothing_store.database.entities.Product;
 import com.squareup.picasso.Picasso;
-
+import android.os.Handler;
+import android.os.Looper;
 public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductViewHolder> {
 
     private final List<Product> productList;
     private final boolean isGuestMode;
-
-    public ProductAdapter(List<Product> productList, boolean isGuestMode) {
+    private final int currentUserId;
+    public ProductAdapter(List<Product> productList, boolean isGuestMode, int currentUserId) {
         this.productList = productList;
         this.isGuestMode = isGuestMode;
+        this.currentUserId = currentUserId;
     }
 
     @NonNull
@@ -62,6 +67,21 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
             holder.ivProductImage.setImageResource(R.drawable.error);
         }
 
+        // Проверяем, добавлен ли товар в избранное
+        new Thread(() -> {
+            AppDatabase db = AppDatabase.getInstance(holder.itemView.getContext());
+            Favorite favorite = db.favoriteDao().getFavorite(currentUserId, product.getId());
+
+            // Обновляем UI через Handler
+            new Handler(Looper.getMainLooper()).post(() -> {
+                if (favorite != null) {
+                    holder.ibFavorite.setImageResource(R.drawable.ic_heart_filled);
+                } else {
+                    holder.ibFavorite.setImageResource(R.drawable.ic_heart);
+                }
+            });
+        }).start();
+
         // Обработка клика на кнопку избранного
         holder.ibFavorite.setOnClickListener(v -> {
             if (isGuestMode) {
@@ -69,7 +89,36 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
                         "Для добавления в избранное требуется регистрация",
                         Toast.LENGTH_SHORT).show();
             } else {
-                // Логика добавления в избранное
+                new Thread(() -> {
+                    AppDatabase db = AppDatabase.getInstance(v.getContext());
+                    FavoriteDao favoriteDao = db.favoriteDao();
+                    Favorite existing = favoriteDao.getFavorite(currentUserId, product.getId());
+
+                    if (existing == null) {
+                        // Добавляем в избранное
+                        Favorite newFavorite = new Favorite();
+                        newFavorite.setUserId(currentUserId);
+                        newFavorite.setProductId(product.getId());
+                        favoriteDao.insert(newFavorite);
+
+                        new Handler(Looper.getMainLooper()).post(() -> {
+                            holder.ibFavorite.setImageResource(R.drawable.ic_heart_filled);
+                            Toast.makeText(v.getContext(),
+                                    "Добавлено в избранное",
+                                    Toast.LENGTH_SHORT).show();
+                        });
+                    } else {
+                        // Удаляем из избранного
+                        favoriteDao.delete(existing);
+
+                        new Handler(Looper.getMainLooper()).post(() -> {
+                            holder.ibFavorite.setImageResource(R.drawable.ic_heart);
+                            Toast.makeText(v.getContext(),
+                                    "Удалено из избранного",
+                                    Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                }).start();
             }
         });
 

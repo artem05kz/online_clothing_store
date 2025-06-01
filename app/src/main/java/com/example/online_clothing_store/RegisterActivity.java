@@ -1,6 +1,7 @@
 package com.example.online_clothing_store;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Patterns;
 import android.widget.Button;
@@ -62,9 +63,13 @@ public class RegisterActivity extends AppCompatActivity {
             newUser.setEmail(email);
             newUser.setPasswordHash(PasswordHasher.hash(password));
 
-            db.userDao().insert(newUser);
+            long userId = db.userDao().insert(newUser);
 
             runOnUiThread(() -> {
+                SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putInt("user_id", (int) userId);
+                editor.apply();
                 Toast.makeText(this, "Регистрация успешна!", Toast.LENGTH_SHORT).show();
                 startActivity(new Intent(this, LoginActivity.class));
                 finish();

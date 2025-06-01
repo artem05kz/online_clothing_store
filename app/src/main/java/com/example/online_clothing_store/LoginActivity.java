@@ -2,6 +2,7 @@ package com.example.online_clothing_store;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.Patterns;
@@ -74,6 +75,10 @@ public class LoginActivity extends AppCompatActivity {
                     if (user != null) {
                         try {
                             if (PasswordHasher.check(password, user.getPasswordHash())) {
+                                SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
+                                SharedPreferences.Editor editor = prefs.edit();
+                                editor.putInt("user_id", user.getId());
+                                editor.apply();
                                 startActivity(new Intent(this, RecommendationsActivity.class));
                                 finish();
                             } else {

@@ -1,14 +1,11 @@
-// Order.java
 package com.example.online_clothing_store.database.entities;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
 import androidx.room.PrimaryKey;
-import java.io.Serializable;
 
-@Entity(
-        tableName = "orders",
+@Entity(tableName = "orders",
         foreignKeys = @ForeignKey(
                 entity = User.class,
                 parentColumns = "id",
@@ -16,18 +13,24 @@ import java.io.Serializable;
                 onDelete = ForeignKey.CASCADE
         )
 )
-public class Order implements Serializable {
+public class Order {
     @PrimaryKey(autoGenerate = true)
     private int id;
 
     @ColumnInfo(name = "user_id")
     private int userId;
 
-    @ColumnInfo(name = "order_date")
+    @ColumnInfo(name = "order_date", defaultValue = "CURRENT_TIMESTAMP")
     private String orderDate;
 
-    @ColumnInfo(name = "status")
-    private String status = "В обработке";
+    @ColumnInfo(name = "status", defaultValue = "'В обработке'")
+    private String status;
+
+    // Конструктор, геттеры и сеттеры
+    public Order(int userId) {
+        this.userId = userId;
+        this.status = "В обработке";
+    }
 
     // Геттеры и сеттеры
     public int getId() { return id; }

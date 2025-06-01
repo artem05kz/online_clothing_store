@@ -1,6 +1,7 @@
 package com.example.online_clothing_store;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
@@ -20,26 +21,23 @@ import java.util.Arrays;
 import java.util.List;
 
 public class CatalogActivity extends AppCompatActivity {
-
+    private int currentUserId = -1;
     private RecyclerView productsGrid;
     private boolean isGuestMode = false;
+    private ProductAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_catalog);
-
-        // Проверяем, вошел ли пользователь как гость
+        SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
+        currentUserId = prefs.getInt("user_id", -1);
         isGuestMode = getIntent().getBooleanExtra("is_guest", false);
 
-        // Инициализация RecyclerView
         productsGrid = findViewById(R.id.productsGrid);
         productsGrid.setLayoutManager(new GridLayoutManager(this, 2));
 
-        // Загрузка товаров
         loadProducts();
-
-        // Настройка кнопок меню
         setupMenuButtons();
     }
 
@@ -82,7 +80,8 @@ public class CatalogActivity extends AppCompatActivity {
 
             // Обновляем UI на главном потоке
             runOnUiThread(() -> {
-                ProductAdapter adapter = new ProductAdapter(productList, isGuestMode);
+                // Создаем адаптер и устанавливаем его
+                adapter = new ProductAdapter(productList, isGuestMode, currentUserId);
                 productsGrid.setAdapter(adapter);
             });
 

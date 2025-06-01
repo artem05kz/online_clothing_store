@@ -1,5 +1,6 @@
 package com.example.online_clothing_store;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -45,7 +46,7 @@ public class ProductDetailActivity extends AppCompatActivity {
         rating.setText(String.valueOf(product.getRating()));
         description.setText(product.getDescription());
         composition.setText(product.getComposition());
-
+        setupMenuButtons();
         // Кнопка "Добавить в корзину"
         Button addToCart = findViewById(R.id.addToCartButton);
         addToCart.setOnClickListener(v -> {
@@ -93,4 +94,26 @@ public class ProductDetailActivity extends AppCompatActivity {
         indicatorContainer.addView(indicator);
         indicator.setViewPager(viewPager);
     }
+    private void setupMenuButtons() {
+        findViewById(R.id.imageButtonHome).setOnClickListener(v -> {
+            startActivity(new Intent(this, RecommendationsActivity.class));
+        });
+
+        findViewById(R.id.imageButtonHanger).setOnClickListener(v -> {
+            startActivity(new Intent(this, CatalogActivity.class));
+        });
+
+        findViewById(R.id.imageButtonWardrobe).setOnClickListener(v -> {
+            startActivity(new Intent(this, WardrobeActivity.class));
+        });
+
+        findViewById(R.id.imageButtonCart).setOnClickListener(v -> {
+            startActivity(new Intent(this, CartActivity.class));
+        });
+
+        findViewById(R.id.imageButtonProfile).setOnClickListener(v -> {
+            startActivity(new Intent(this, ProfileActivity.class));
+        });
+    }
+
 }

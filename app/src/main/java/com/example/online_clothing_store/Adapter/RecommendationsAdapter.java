@@ -19,7 +19,7 @@ public class RecommendationsAdapter extends RecyclerView.Adapter<Recommendations
 
     private final List<Product> productList;
     private final Context context;
-
+    
     public RecommendationsAdapter(List<Product> productList, Context context) {
         this.productList = productList;
         this.context = context;

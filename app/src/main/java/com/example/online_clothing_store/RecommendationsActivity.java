@@ -1,6 +1,7 @@
 package com.example.online_clothing_store;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,11 +22,16 @@ public class RecommendationsActivity extends AppCompatActivity {
     private RecyclerView newArrivalsList;
     private RecyclerView recommendationsList;
     private TextView tvWelcome;
+    private int currentUserId = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recommendations);
+
+        // Получаем ID пользователя
+        SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
+        currentUserId = prefs.getInt("user_id", -1);
 
         // Настройка Toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -53,8 +59,8 @@ public class RecommendationsActivity extends AppCompatActivity {
             List<Product> recommendedProducts = productDao.getRecommendedProducts();
 
             runOnUiThread(() -> {
-                // Новые поступления
-                ProductAdapter newArrivalsAdapter = new ProductAdapter(newProducts, false);
+                // Новые поступления - передаем currentUserId
+                ProductAdapter newArrivalsAdapter = new ProductAdapter(newProducts, false, currentUserId);
                 newArrivalsList.setAdapter(newArrivalsAdapter);
 
                 // Рекомендации

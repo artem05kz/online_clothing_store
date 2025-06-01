@@ -6,9 +6,11 @@ import com.example.online_clothing_store.database.dao.*;
 import android.content.Context;
 import java.util.List;
 
-@Database(entities = {User.class, Product.class, ProductImage.class, Category.class}, version = 1)
+@Database(entities = {User.class, Product.class, ProductImage.class, Category.class, Favorite.class, Order.class}, version = 1)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
+    public abstract FavoriteDao favoriteDao();
+    public abstract OrderDao orderDao();
     public abstract UserDao userDao();
     public abstract ProductDao productDao();
     public abstract ProductImageDao productImageDao();

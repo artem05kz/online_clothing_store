@@ -33,6 +33,9 @@
         <activity
             android:name=".CatalogActivity"
             android:theme="@style/Theme.Online_clothing_store" />
+        <activity
+            android:name=".ProfileActivity"
+            android:theme="@style/Theme.Online_clothing_store" />
 
         <activity
             android:name=".RecommendationsActivity"
