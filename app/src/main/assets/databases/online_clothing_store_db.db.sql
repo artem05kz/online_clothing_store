@@ -58,6 +58,15 @@ CREATE TABLE IF NOT EXISTS "products" (
 	PRIMARY KEY("id" AUTOINCREMENT),
 	FOREIGN KEY("category_id") REFERENCES "categories"("id")
 );
+CREATE TABLE IF NOT EXISTS "promos" (
+	"id"	INTEGER,
+	"imageUrl"	TEXT,
+	"code"	TEXT UNIQUE,
+	"discountPercent"	INTEGER,
+	"description"	TEXT,
+	"isActive"	INTEGER DEFAULT 1,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
 CREATE TABLE IF NOT EXISTS "users" (
 	"id"	INTEGER NOT NULL,
 	"name"	TEXT NOT NULL,
@@ -65,20 +74,5 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"password_hash"	TEXT NOT NULL,
 	"address"	TEXT,
 	PRIMARY KEY("id" AUTOINCREMENT)
-);
-CREATE TABLE IF NOT EXISTS "wardrobe" (
-	"id"	INTEGER NOT NULL,
-	"user_id"	INTEGER NOT NULL,
-	"name"	TEXT NOT NULL,
-	PRIMARY KEY("id" AUTOINCREMENT),
-	FOREIGN KEY("user_id") REFERENCES "users"("id")
-);
-CREATE TABLE IF NOT EXISTS "wardrobe_items" (
-	"wardrobe_id"	INTEGER NOT NULL,
-	"product_id"	INTEGER NOT NULL,
-	"type"	TEXT CHECK("type" IN ('HEAD', 'TOP', 'BOTTOM', 'SHOES')),
-	PRIMARY KEY("wardrobe_id","product_id"),
-	FOREIGN KEY("product_id") REFERENCES "products"("id"),
-	FOREIGN KEY("wardrobe_id") REFERENCES "wardrobe"("id")
 );
 COMMIT;

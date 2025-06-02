@@ -7,7 +7,7 @@ import android.content.Context;
 import java.util.List;
 
 @Database(entities = {User.class, Product.class, ProductImage.class, Category.class,
-        Favorite.class, Order.class, Cart.class, OrderItem.class}, version = 1)
+        Favorite.class, Order.class, Cart.class, OrderItem.class, Promo.class}, version = 1)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
     public abstract CartDao cartDao();
@@ -18,6 +18,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract ProductDao productDao();
     public abstract ProductImageDao productImageDao();
     public abstract CategoryDao categoryDao();
+    public abstract PromoDao promoDao();
     private static final String DB_NAME = "online_clothing_store_db.db";
     private static volatile AppDatabase INSTANCE;
 

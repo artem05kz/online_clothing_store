@@ -1,8 +1,11 @@
 package com.example.online_clothing_store;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -14,6 +17,8 @@ import com.example.online_clothing_store.Adapter.CartAdapter;
 import com.example.online_clothing_store.database.AppDatabase;
 import com.example.online_clothing_store.database.entities.Cart;
 import com.example.online_clothing_store.database.entities.Product;
+import com.example.online_clothing_store.database.dao.PromoDao;
+import com.example.online_clothing_store.database.entities.Promo;
 import java.util.List;
 
 public class CartActivity extends AppCompatActivity {
@@ -25,6 +30,8 @@ public class CartActivity extends AppCompatActivity {
     private AppDatabase db;
     private List<Cart> cartItems;
     private CartAdapter adapter;
+    private Promo appliedPromo = null;
+    private double lastTotal = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,16 +61,30 @@ public class CartActivity extends AppCompatActivity {
         // Загрузка данных корзины
         loadCartItems();
 
+        // Попытка автозаполнения промокода из буфера обмена
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        if (clipboard.hasPrimaryClip()) {
+            ClipData clip = clipboard.getPrimaryClip();
+            if (clip != null && clip.getItemCount() > 0) {
+                CharSequence text = clip.getItemAt(0).getText();
+                if (text != null && text.length() > 0) {
+                    promoCodeInput.setText(text.toString());
+                }
+            }
+        }
+
         // Обработка кнопки "Заказать все"
         checkoutButton.setOnClickListener(v -> {
             startActivity(new Intent(this, CheckoutActivity.class));
         });
 
-        // Обработка промокода (пример, если нужна функциональность)
+        // Обработка промокода (ручной ввод или автозаполнение)
         promoCodeInput.setOnEditorActionListener((v, actionId, event) -> {
-            String promoCode = promoCodeInput.getText().toString().trim();
-            if (!promoCode.isEmpty()) {
-                Toast.makeText(this, "Промокод применён: " + promoCode, Toast.LENGTH_SHORT).show();
+            if (actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_ACTION_NEXT || actionId == 0) {
+                String promoCode = promoCodeInput.getText().toString().trim();
+                if (!promoCode.isEmpty()) {
+                    checkAndApplyPromo(promoCode);
+                }
             }
             return false;
         });
@@ -107,6 +128,24 @@ public class CartActivity extends AppCompatActivity {
         }).start();
     }
 
+    private void checkAndApplyPromo(String code) {
+        new Thread(() -> {
+            PromoDao promoDao = db.promoDao();
+            Promo promo = promoDao.getPromoByCode(code);
+            runOnUiThread(() -> {
+                if (promo == null || !promo.isActive) {
+                    appliedPromo = null;
+                    Toast.makeText(this, "Промокод не найден или устарел", Toast.LENGTH_SHORT).show();
+                    updateTotalPrice();
+                } else {
+                    appliedPromo = promo;
+                    Toast.makeText(this, "Промокод применён: " + promo.code + " (-" + promo.discountPercent + "%)", Toast.LENGTH_SHORT).show();
+                    updateTotalPrice();
+                }
+            });
+        }).start();
+    }
+
     private void updateTotalPrice() {
         new Thread(() -> {
             double total = 0;
@@ -117,11 +156,17 @@ public class CartActivity extends AppCompatActivity {
                 }
             }
             double finalTotal = total;
+            if (appliedPromo != null && appliedPromo.discountPercent > 0) {
+                finalTotal = finalTotal * (1 - appliedPromo.discountPercent / 100.0);
+            }
+            lastTotal = finalTotal;
+            final double totalForUi = finalTotal;
             runOnUiThread(() -> {
-                totalPrice.setText(String.format("%.2f ₽", finalTotal));
+                totalPrice.setText(String.format("%.2f ₽", totalForUi));
             });
         }).start();
     }
+
     private void setupMenuButtons() {
         findViewById(R.id.imageButtonCart).setOnClickListener(v -> {
             Toast.makeText(this, "Вы уже в корзине", Toast.LENGTH_SHORT).show();
@@ -143,5 +188,4 @@ public class CartActivity extends AppCompatActivity {
             startActivity(new Intent(this, ProfileActivity.class));
         });
     }
-
 }

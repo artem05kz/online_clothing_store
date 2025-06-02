@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,6 +20,12 @@ import com.example.online_clothing_store.database.entities.Product;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import android.widget.ImageView;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import com.example.online_clothing_store.database.dao.PromoDao;
+import com.example.online_clothing_store.database.entities.Promo;
+import com.squareup.picasso.Picasso;
 
 public class RecommendationsActivity extends AppCompatActivity {
 
@@ -30,6 +37,8 @@ public class RecommendationsActivity extends AppCompatActivity {
     private ProductAdapter newArrivalsAdapter;
     private RecommendationsAdapter recommendedAdapter;
     private ExecutorService executor;
+    private ImageView promoBanner;
+    private Promo currentPromo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +58,7 @@ public class RecommendationsActivity extends AppCompatActivity {
         tvWelcome = findViewById(R.id.tvWelcome);
         newArrivalsList = findViewById(R.id.newArrivalsList);
         recommendationsList = findViewById(R.id.recommendationsList);
+        promoBanner = findViewById(R.id.promoBanner);
 
         // Настройка RecyclerView
         newArrivalsList.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
@@ -59,6 +69,7 @@ public class RecommendationsActivity extends AppCompatActivity {
 
         // Загрузка данных
         loadProducts();
+        loadPromoBanner();
 
         // Настройка кнопок навигации
         setupMenuButtons();
@@ -84,6 +95,29 @@ public class RecommendationsActivity extends AppCompatActivity {
             } catch (Exception e) {
                 Log.e("RecommendationsActivity", "Ошибка загрузки продуктов", e);
                 runOnUiThread(() -> Toast.makeText(this, "Ошибка загрузки рекомендаций", Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
+    private void loadPromoBanner() {
+        executor.execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            PromoDao promoDao = db.promoDao();
+            Promo promo = promoDao.getActivePromo();
+            if (promo != null && promo.imageUrl != null && !promo.imageUrl.isEmpty()) {
+                currentPromo = promo;
+                runOnUiThread(() -> {
+                    promoBanner.setVisibility(View.VISIBLE);
+                    Picasso.get().load(promo.imageUrl).into(promoBanner);
+                    promoBanner.setOnClickListener(v -> {
+                        ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                        ClipData clip = ClipData.newPlainText("Промокод", promo.code);
+                        clipboard.setPrimaryClip(clip);
+                        Toast.makeText(this, "Промокод '" + promo.code + "' скопирован! Вставьте его в корзине.", Toast.LENGTH_SHORT).show();
+                    });
+                });
+            } else {
+                runOnUiThread(() -> promoBanner.setVisibility(View.GONE));
             }
         });
     }

@@ -84,6 +84,15 @@
                 android:layout_marginBottom="20dp"
                 android:background="@drawable/edittext_rounded"/>
 
+            <ImageView
+                android:id="@+id/promoBanner"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:layout_marginBottom="16dp"
+                android:scaleType="centerCrop"
+                android:contentDescription="Промо-акция"
+                android:visibility="gone"/>
+
             <!-- Новые поступления -->
             <TextView
                 android:layout_width="match_parent"
