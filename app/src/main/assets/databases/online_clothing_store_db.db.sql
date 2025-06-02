@@ -3,10 +3,10 @@ CREATE TABLE IF NOT EXISTS "cart" (
 	"id"	INTEGER NOT NULL,
 	"user_id"	INTEGER NOT NULL,
 	"product_id"	INTEGER NOT NULL,
-	"quantity"	INTEGER DEFAULT 1,
+	"quantity"	INTEGER NOT NULL DEFAULT 1,
 	PRIMARY KEY("id" AUTOINCREMENT),
-	FOREIGN KEY("product_id") REFERENCES "products"("id"),
-	FOREIGN KEY("user_id") REFERENCES "users"("id")
+	FOREIGN KEY("product_id") REFERENCES "products"("id") ON DELETE CASCADE,
+	FOREIGN KEY("user_id") REFERENCES "users"("id") ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS "categories" (
 	"id"	INTEGER NOT NULL,
@@ -25,8 +25,8 @@ CREATE TABLE IF NOT EXISTS "order_items" (
 	"product_id"	INTEGER NOT NULL,
 	"quantity"	INTEGER NOT NULL,
 	PRIMARY KEY("order_id","product_id"),
-	FOREIGN KEY("order_id") REFERENCES "orders"("id"),
-	FOREIGN KEY("product_id") REFERENCES "products"("id")
+	FOREIGN KEY("order_id") REFERENCES "orders"("id") ON DELETE CASCADE,
+	FOREIGN KEY("product_id") REFERENCES "products"("id") ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS "orders" (
 	"id"	INTEGER NOT NULL,

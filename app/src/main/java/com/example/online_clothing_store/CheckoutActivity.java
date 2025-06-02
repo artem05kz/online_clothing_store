@@ -57,7 +57,7 @@ public class CheckoutActivity extends AppCompatActivity {
 
             // Оформление заказа
             new Thread(() -> {
-                Order order = new Order(currentUserId);
+                Order order = new Order(currentUserId, address);
                 long orderId = db.orderDao().insert(order);
 
                 List<Cart> cartItems = db.cartDao().getCartItemsByUserId(currentUserId);

@@ -145,7 +145,7 @@ public class ProfileActivity extends AppCompatActivity {
                     TextView tvOrderStatus = orderCard.findViewById(R.id.tvOrderStatus);
 
                     tvOrderId.setText("Заказ #" + order.getId());
-                    tvOrderDate.setText(order.getOrderDate());
+                    tvOrderDate.setText(order.getAddress());
                     tvOrderStatus.setText(order.getStatus());
 
                     ordersContainer.addView(orderCard);

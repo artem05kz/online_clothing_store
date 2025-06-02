@@ -57,7 +57,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
                         favoriteProductIds.add(favorite.getProductId());
                     }
                 }
-                notifyDataSetChanged(); // Обновляем UI после загрузки
+                runOnUiThread(this::notifyDataSetChanged);
             });
         }
     }

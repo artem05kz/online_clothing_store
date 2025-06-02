@@ -30,10 +30,15 @@ public class Order {
 
     @ColumnInfo(name = "status", defaultValue = "'В обработке'")
     private String status;
+    
+    @ColumnInfo(name = "address")
+    private String address;
+    
 
     // Конструктор, геттеры и сеттеры
-    public Order(int userId) {
+    public Order(int userId, String address) {
         this.userId = userId;
+        this.address = address;
         this.status = "В обработке";
     }
 
@@ -49,4 +54,8 @@ public class Order {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+    
 }

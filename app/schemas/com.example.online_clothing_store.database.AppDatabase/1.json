@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "061ec829dbefd73cdd3a5a73d619c7bb",
+    "identityHash": "adfdb8763560f8127641283191e80798",
     "entities": [
       {
         "tableName": "users",
@@ -283,7 +283,7 @@
       },
       {
         "tableName": "orders",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `user_id` INTEGER NOT NULL, `order_date` TEXT DEFAULT CURRENT_TIMESTAMP, `status` TEXT DEFAULT 'В обработке', FOREIGN KEY(`user_id`) REFERENCES `users`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `user_id` INTEGER NOT NULL, `order_date` TEXT DEFAULT CURRENT_TIMESTAMP, `status` TEXT DEFAULT 'В обработке', `address` TEXT, FOREIGN KEY(`user_id`) REFERENCES `users`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "id",
@@ -308,6 +308,11 @@
             "columnName": "status",
             "affinity": "TEXT",
             "defaultValue": "'В обработке'"
+          },
+          {
+            "fieldPath": "address",
+            "columnName": "address",
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -499,7 +504,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '061ec829dbefd73cdd3a5a73d619c7bb')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'adfdb8763560f8127641283191e80798')"
     ]
   }
 }

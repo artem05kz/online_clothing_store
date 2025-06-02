@@ -2,6 +2,7 @@ package com.example.online_clothing_store.database.dao;
 
 import androidx.room.Dao;
 import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 
 import com.example.online_clothing_store.database.entities.Category;
@@ -11,7 +12,7 @@ public interface CategoryDao {
     @Insert
     void insert(Category category);
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     void insertAll(Category... categories);
 
     @Query("SELECT COUNT(*) FROM categories")

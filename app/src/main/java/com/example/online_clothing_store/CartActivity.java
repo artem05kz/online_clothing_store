@@ -67,6 +67,7 @@ public class CartActivity extends AppCompatActivity {
             }
             return false;
         });
+        setupMenuButtons();
     }
 
     private void loadCartItems() {
@@ -85,20 +86,20 @@ public class CartActivity extends AppCompatActivity {
             db.cartDao().delete(cartItem);
             runOnUiThread(() -> {
                 cartItems.remove(cartItem);
-                adapter.notifyDataSetChanged();
+                runOnUiThread(() -> adapter.notifyDataSetChanged());
                 updateTotalPrice();
             });
         }).start();
     }
 
     private void onQuantityChanged(Cart cartItem, int newQuantity) {
-        if (newQuantity <= 0) {
-            onDeleteItem(cartItem);
-            return;
-        }
         new Thread(() -> {
             cartItem.setQuantity(newQuantity);
-            db.cartDao().insert(cartItem); // Обновляем запись
+            if (newQuantity > 0) {
+                db.cartDao().update(cartItem);
+            } else {
+                db.cartDao().delete(cartItem);
+            }
             runOnUiThread(() -> {
                 adapter.notifyDataSetChanged();
                 updateTotalPrice();
@@ -121,4 +122,26 @@ public class CartActivity extends AppCompatActivity {
             });
         }).start();
     }
+    private void setupMenuButtons() {
+        findViewById(R.id.imageButtonCart).setOnClickListener(v -> {
+            Toast.makeText(this, "Вы уже в корзине", Toast.LENGTH_SHORT).show();
+        });
+
+        findViewById(R.id.imageButtonHanger).setOnClickListener(v -> {
+            startActivity(new Intent(this, CatalogActivity.class));
+        });
+
+        findViewById(R.id.imageButtonWardrobe).setOnClickListener(v -> {
+            startActivity(new Intent(this, WardrobeActivity.class));
+        });
+
+        findViewById(R.id.imageButtonHome).setOnClickListener(v -> {
+            startActivity(new Intent(this, CartActivity.class));
+        });
+
+        findViewById(R.id.imageButtonProfile).setOnClickListener(v -> {
+            startActivity(new Intent(this, ProfileActivity.class));
+        });
+    }
+
 }
