@@ -2,6 +2,9 @@ package com.example.online_clothing_store.database.dao;
 
 import androidx.room.*;
 import com.example.online_clothing_store.database.entities.User;
+
+import java.util.List;
+
 @Dao
 public interface UserDao {
     @Insert
@@ -13,4 +16,6 @@ public interface UserDao {
     User getUserById(int userId);
     @Update
     void update(User user);
+    @Query("SELECT * FROM users")
+    List<User> getAllUsers();
 }
