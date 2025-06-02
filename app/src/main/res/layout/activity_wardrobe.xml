@@ -61,7 +61,8 @@
                         android:layout_height="200dp"
                         android:scaleType="centerCrop"
                         android:layout_marginHorizontal="8dp"
-                        android:src="@drawable/ic_cap"/>
+                        android:src="@drawable/ic_cap"
+                        android:clickable="true"/>
 
                     <ImageButton
                         android:id="@+id/btnHatNext"
@@ -94,7 +95,8 @@
                         android:layout_height="200dp"
                         android:scaleType="centerCrop"
                         android:layout_marginHorizontal="8dp"
-                        android:src="@drawable/ic_shirt"/>
+                        android:src="@drawable/ic_shirt"
+                        android:clickable="true"/>
 
                     <ImageButton
                         android:id="@+id/btnShirtNext"
@@ -127,7 +129,8 @@
                         android:layout_height="200dp"
                         android:scaleType="centerCrop"
                         android:layout_marginHorizontal="8dp"
-                        android:src="@drawable/ic_pants"/>
+                        android:src="@drawable/ic_pants"
+                        android:clickable="true"/>
 
                     <ImageButton
                         android:id="@+id/btnPantsNext"
@@ -160,7 +163,8 @@
                         android:layout_height="200dp"
                         android:layout_marginHorizontal="8dp"
                         android:scaleType="centerCrop"
-                        android:src="@drawable/ic_shoes" />
+                        android:src="@drawable/ic_shoes"
+                        android:clickable="true"/>
 
                     <ImageButton
                         android:id="@+id/btnShoesNext"
@@ -192,7 +196,7 @@
                     android:id="@+id/btnGenerate"
                     android:layout_width="match_parent"
                     android:layout_height="50dp"
-                    android:text="Подобрать образ"
+                    android:text="Добавить все в корзину"
                     android:layout_marginTop="12dp"
                     android:backgroundTint="@color/backgroundDark"/>
             </LinearLayout>

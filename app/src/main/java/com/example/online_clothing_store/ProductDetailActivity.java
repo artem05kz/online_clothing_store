@@ -5,12 +5,15 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
 import com.example.online_clothing_store.database.AppDatabase;
+import com.example.online_clothing_store.database.dao.FavoriteDao;
 import com.example.online_clothing_store.database.entities.Cart;
+import com.example.online_clothing_store.database.entities.Favorite;
 import com.example.online_clothing_store.database.entities.Product;
 import com.example.online_clothing_store.database.entities.ProductImage;
 import me.relex.circleindicator.CircleIndicator3;
@@ -95,6 +98,40 @@ public class ProductDetailActivity extends AppCompatActivity {
             }).start();
         });
 
+        // Кнопка избранного
+        ImageButton ibFavorite = findViewById(R.id.ibFavorite);
+        updateFavoriteIcon(ibFavorite, currentUserId, product.getId());
+        ibFavorite.setOnClickListener(v -> {
+            if (currentUserId == -1) {
+                Toast.makeText(this, "Пожалуйста, авторизуйтесь", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(this, LoginActivity.class));
+                return;
+            }
+            new Thread(() -> {
+                AppDatabase db = AppDatabase.getInstance(ProductDetailActivity.this);
+                FavoriteDao favoriteDao = db.favoriteDao();
+                Favorite existing = favoriteDao.getFavorite(currentUserId, product.getId());
+                if (existing == null) {
+                    // Добавить в избранное
+                    Favorite fav = new Favorite();
+                    fav.setUserId(currentUserId);
+                    fav.setProductId(product.getId());
+                    favoriteDao.insert(fav);
+                    runOnUiThread(() -> {
+                        ibFavorite.setImageResource(R.drawable.ic_heart_filled);
+                        Toast.makeText(this, "Добавлено в избранное", Toast.LENGTH_SHORT).show();
+                    });
+                } else {
+                    // Удалить из избранного
+                    favoriteDao.delete(existing);
+                    runOnUiThread(() -> {
+                        ibFavorite.setImageResource(R.drawable.ic_heart);
+                        Toast.makeText(this, "Удалено из избранного", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }).start();
+        });
+
         setupMenuButtons();
     }
 
@@ -157,5 +194,20 @@ public class ProductDetailActivity extends AppCompatActivity {
         findViewById(R.id.imageButtonProfile).setOnClickListener(v -> {
             startActivity(new Intent(this, ProfileActivity.class));
         });
+    }
+
+    private void updateFavoriteIcon(ImageButton ibFavorite, int userId, int productId) {
+        new Thread(() -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            FavoriteDao favoriteDao = db.favoriteDao();
+            Favorite existing = favoriteDao.getFavorite(userId, productId);
+            runOnUiThread(() -> {
+                if (existing != null) {
+                    ibFavorite.setImageResource(R.drawable.ic_heart_filled);
+                } else {
+                    ibFavorite.setImageResource(R.drawable.ic_heart);
+                }
+            });
+        }).start();
     }
 }

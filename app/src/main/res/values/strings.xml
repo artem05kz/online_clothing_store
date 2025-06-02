@@ -11,4 +11,17 @@
     <string name="composition">Состав</string>
     <string name="product_composition">100% хлопок</string>
     <string name="add_to_cart">Добавить в корзину</string>
+    <string-array name="category_names">
+        <item>Все</item>
+        <item>Головные уборы</item>
+        <item>Верхняя одежда</item>
+        <item>Нижняя одежда</item>
+        <item>Обувь</item>
+    </string-array>
+    <string-array name="sort_options">
+        <item>Без сортировки</item>
+        <item>По рейтингу</item>
+        <item>По цене (возрастание)</item>
+        <item>По цене (убывание)</item>
+    </string-array>
 </resources>

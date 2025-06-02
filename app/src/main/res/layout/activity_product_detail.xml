@@ -37,6 +37,17 @@
                     android:layout_height="match_parent"
                     android:clipToPadding="false"
                     android:background="@color/white"/>
+
+                <ImageButton
+                    android:id="@+id/ibFavorite"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="top|end"
+                    android:layout_margin="12dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_heart"
+                    app:tint="@color/gold"/>
+
                 <LinearLayout
                     android:id="@+id/indicatorContainer"
                     android:layout_width="match_parent"

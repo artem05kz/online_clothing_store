@@ -27,9 +27,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:background="@color/whiteText"
+                android:backgroundTint="@color/whiteText"
                 android:padding="16dp"
-                android:paddingBottom="16dp">
+                android:paddingBottom="16dp"
+                android:background="@drawable/edittext_rounded">
 
                 <ImageView
                     android:id="@+id/ivAvatar"
@@ -89,9 +90,10 @@
                 android:id="@+id/favoritesContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@color/whiteText"
+                android:backgroundTint="@color/whiteText"
                 android:orientation="vertical"
-                android:padding="8dp">
+                android:padding="8dp"
+                android:background="@drawable/edittext_rounded">
                 <!-- Контейнер для динамического добавления карточек -->
             </LinearLayout>
 
@@ -109,9 +111,10 @@
                 android:id="@+id/ordersContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@color/whiteText"
+                android:backgroundTint="@color/whiteText"
                 android:orientation="vertical"
-                android:padding="8dp">
+                android:padding="8dp"
+                android:background="@drawable/edittext_rounded">
                 <!-- Контейнер для динамического добавления карточек -->
             </LinearLayout>
 

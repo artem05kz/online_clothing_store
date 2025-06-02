@@ -18,6 +18,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
+import android.view.View;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 public class CatalogActivity extends AppCompatActivity {
     private int currentUserId = -1;
@@ -25,6 +31,11 @@ public class CatalogActivity extends AppCompatActivity {
     private boolean isGuestMode = false;
     private ProductAdapter adapter;
     private ExecutorService executor;
+    private Spinner spinnerCategory;
+    private Spinner spinnerSort;
+    private List<Product> allProducts = new ArrayList<>();
+    private int selectedCategory = 0; // 0 - все
+    private int selectedSort = 0; // 0 - без сортировки
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +53,34 @@ public class CatalogActivity extends AppCompatActivity {
 
         // Инициализация пула потоков
         executor = Executors.newFixedThreadPool(2);
+
+        // Инициализация Spinner'ов
+        spinnerCategory = findViewById(R.id.spinnerCategory);
+        spinnerSort = findViewById(R.id.spinnerSort);
+        ArrayAdapter<CharSequence> categoryAdapter = ArrayAdapter.createFromResource(this, R.array.category_names, android.R.layout.simple_spinner_item);
+        categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerCategory.setAdapter(categoryAdapter);
+        ArrayAdapter<CharSequence> sortAdapter = ArrayAdapter.createFromResource(this, R.array.sort_options, android.R.layout.simple_spinner_item);
+        sortAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerSort.setAdapter(sortAdapter);
+        spinnerCategory.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                selectedCategory = position;
+                updateProductList();
+            }
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
+        spinnerSort.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                selectedSort = position;
+                updateProductList();
+            }
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
 
         // Загрузка продуктов
         loadProducts();
@@ -61,81 +100,36 @@ public class CatalogActivity extends AppCompatActivity {
                 ProductDao productDao = db.productDao();
                 createCategories(db);
                 List<Product> productList = productDao.getAllProducts();
-                if (productList.isEmpty()) {
-                    Product product1 = new Product(
-                            "Футболка NIKE",
-                            1999,
-                            "Классическая футболка из мягкого хлопка",
-                            "M",
-                            "Nike",
-                            4.7,
-                            "https://i.pinimg.com/736x/d5/66/a8/d566a8cda6e5bfb7ee9261885f5b9ea2.jpg",
-                            "100% хлопок",
-                            2
-                    );
-                    long productId1 = productDao.insertProduct(product1);
-                    product1.setId((int) productId1);
-
-                    Product product2 = new Product(
-                            "Джинсы Levi's",
-                            2999,
-                            "Джинсы",
-                            "32",
-                            "Levi's",
-                            4.9,
-                            "https://i.pinimg.com/736x/fb/5d/ff/fb5dff754e24426ab01d6c67b867d8d8.jpg",
-                            "98% хлопок, 2% эластан",
-                            3
-                    );
-                    long productId2 = productDao.insertProduct(product2);
-                    product2.setId((int) productId2);
-
-                    // Новые товары:
-                    Product product3 = new Product(
-                            "Кепка",
-                            1200,
-                            "Стильная кепка для города и спорта",
-                            "L",
-                            "Adidas",
-                            4.5,
-                            "https://i.pinimg.com/736x/e5/a8/b5/e5a8b5c3c07ed30cf53fbb2b1e91db80.jpg",
-                            "100% хлопок",
-                            1
-                    );
-                    long productId3 = productDao.insertProduct(product3);
-                    product3.setId((int) productId3);
-
-                    Product product4 = new Product(
-                            "Кеды Converse",
-                            3500,
-                            "Классические кеды для повседневной носки",
-                            "42",
-                            "Converse",
-                            4.8,
-                            "https://i.pinimg.com/736x/71/f0/db/71f0db5e25de58caabbaae9c72809bda.jpg",
-                            "Текстиль, резина",
-                            4
-                    );
-                    long productId4 = productDao.insertProduct(product4);
-                    product4.setId((int) productId4);
-
-                    // Сохранение дополнительных изображений для футболки
-                    saveAdditionalImages((int) productId1, Arrays.asList(
-                            "https://i.pinimg.com/736x/4c/f6/f0/4cf6f0f06ffca64af51fe14f461e76a9.jpg"
-                    ));
-
-                    productList = productDao.getAllProducts();
-                }
-                List<Product> finalProductList = productList;
-                runOnUiThread(() -> {
-                    adapter = new ProductAdapter(this, finalProductList, isGuestMode, currentUserId);
-                    productsGrid.setAdapter(adapter);
-                });
+                allProducts = new ArrayList<>(productList);
+                runOnUiThread(this::updateProductList);
             } catch (Exception e) {
                 Log.e("CatalogActivity", "Ошибка загрузки продуктов", e);
                 runOnUiThread(() -> Toast.makeText(this, "Ошибка загрузки каталога", Toast.LENGTH_SHORT).show());
             }
         });
+    }
+
+    private void updateProductList() {
+        List<Product> filtered = new ArrayList<>();
+        for (Product p : allProducts) {
+            if (selectedCategory == 0 || (p.getCategoryId() != null && p.getCategoryId() == selectedCategory)) {
+                filtered.add(p);
+            }
+        }
+        // Сортировка
+        switch (selectedSort) {
+            case 1: // По рейтингу
+                Collections.sort(filtered, (a, b) -> Double.compare(b.getRating(), a.getRating()));
+                break;
+            case 2: // По цене (возрастание)
+                Collections.sort(filtered, Comparator.comparingDouble(Product::getPrice));
+                break;
+            case 3: // По цене (убывание)
+                Collections.sort(filtered, (a, b) -> Double.compare(b.getPrice(), a.getPrice()));
+                break;
+        }
+        adapter = new ProductAdapter(this, filtered, isGuestMode, currentUserId);
+        productsGrid.setAdapter(adapter);
     }
 
     private void saveAdditionalImages(int productId, List<String> imageUrls) {

@@ -3,12 +3,16 @@ package com.example.online_clothing_store;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.online_clothing_store.database.AppDatabase;
+import com.example.online_clothing_store.database.dao.CartDao;
 import com.example.online_clothing_store.database.dao.FavoriteDao;
+import com.example.online_clothing_store.database.entities.Cart;
 import com.example.online_clothing_store.database.entities.Product;
 import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
@@ -24,6 +28,8 @@ public class WardrobeActivity extends AppCompatActivity {
 
     private ImageView ivHat, ivShirt, ivPants, ivShoes;
     private ImageButton btnHatPrev, btnHatNext, btnShirtPrev, btnShirtNext, btnPantsPrev, btnPantsNext, btnShoesPrev, btnShoesNext;
+    private TextView tvTotalPrice;
+    private Button btnGenerate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,9 +56,13 @@ public class WardrobeActivity extends AppCompatActivity {
         btnPantsNext = findViewById(R.id.btnPantsNext);
         btnShoesPrev = findViewById(R.id.btnShoesPrev);
         btnShoesNext = findViewById(R.id.btnShoesNext);
+        tvTotalPrice = findViewById(R.id.tvTotalPrice);
+        btnGenerate = findViewById(R.id.btnGenerate);
 
         setupMenuButtons();
         loadFavoritesAndSetup();
+        setupImageClicks();
+        btnGenerate.setOnClickListener(v -> addAllToCart());
     }
 
     private void loadFavoritesAndSetup() {
@@ -78,15 +88,15 @@ public class WardrobeActivity extends AppCompatActivity {
         showProductInCategory(ivShirt, tops, topIndex, R.drawable.ic_shirt);
         showProductInCategory(ivPants, bottoms, bottomIndex, R.drawable.ic_pants);
         showProductInCategory(ivShoes, shoes, shoesIndex, R.drawable.ic_shoes);
-
-        btnHatPrev.setOnClickListener(v -> switchProduct(hats, -1, "hat"));
-        btnHatNext.setOnClickListener(v -> switchProduct(hats, 1, "hat"));
-        btnShirtPrev.setOnClickListener(v -> switchProduct(tops, -1, "top"));
-        btnShirtNext.setOnClickListener(v -> switchProduct(tops, 1, "top"));
-        btnPantsPrev.setOnClickListener(v -> switchProduct(bottoms, -1, "bottom"));
-        btnPantsNext.setOnClickListener(v -> switchProduct(bottoms, 1, "bottom"));
-        btnShoesPrev.setOnClickListener(v -> switchProduct(shoes, -1, "shoes"));
-        btnShoesNext.setOnClickListener(v -> switchProduct(shoes, 1, "shoes"));
+        btnHatPrev.setOnClickListener(v -> { switchProduct(hats, -1, "hat"); updateTotalPrice(); });
+        btnHatNext.setOnClickListener(v -> { switchProduct(hats, 1, "hat"); updateTotalPrice(); });
+        btnShirtPrev.setOnClickListener(v -> { switchProduct(tops, -1, "top"); updateTotalPrice(); });
+        btnShirtNext.setOnClickListener(v -> { switchProduct(tops, 1, "top"); updateTotalPrice(); });
+        btnPantsPrev.setOnClickListener(v -> { switchProduct(bottoms, -1, "bottom"); updateTotalPrice(); });
+        btnPantsNext.setOnClickListener(v -> { switchProduct(bottoms, 1, "bottom"); updateTotalPrice(); });
+        btnShoesPrev.setOnClickListener(v -> { switchProduct(shoes, -1, "shoes"); updateTotalPrice(); });
+        btnShoesNext.setOnClickListener(v -> { switchProduct(shoes, 1, "shoes"); updateTotalPrice(); });
+        updateTotalPrice();
     }
 
     private void showProductInCategory(ImageView iv, List<Product> list, int index, int placeholderRes) {
@@ -123,6 +133,7 @@ public class WardrobeActivity extends AppCompatActivity {
                 break;
         }
     }
+
     private void setupMenuButtons() {
         findViewById(R.id.imageButtonHome).setOnClickListener(v -> {
             startActivity(new Intent(this, RecommendationsActivity.class));
@@ -143,5 +154,65 @@ public class WardrobeActivity extends AppCompatActivity {
         findViewById(R.id.imageButtonProfile).setOnClickListener(v -> {
             startActivity(new Intent(this, ProfileActivity.class));
         });
+    }
+
+    private void setupImageClicks() {
+        ivHat.setOnClickListener(v -> openProductDetail(hats, hatIndex));
+        ivShirt.setOnClickListener(v -> openProductDetail(tops, topIndex));
+        ivPants.setOnClickListener(v -> openProductDetail(bottoms, bottomIndex));
+        ivShoes.setOnClickListener(v -> openProductDetail(shoes, shoesIndex));
+    }
+
+    private void openProductDetail(List<Product> list, int index) {
+        if (list.isEmpty()) return;
+        Product p = list.get(index);
+        Intent intent = new Intent(this, ProductDetailActivity.class);
+        intent.putExtra("product", p);
+        startActivity(intent);
+    }
+
+    private void updateTotalPrice() {
+        double total = 0;
+        if (!hats.isEmpty()) total += hats.get(hatIndex).getPrice();
+        if (!tops.isEmpty()) total += tops.get(topIndex).getPrice();
+        if (!bottoms.isEmpty()) total += bottoms.get(bottomIndex).getPrice();
+        if (!shoes.isEmpty()) total += shoes.get(shoesIndex).getPrice();
+        String text = "Стоимость образа: " + (int)total + " ₽";
+        tvTotalPrice.setText(text);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateTotalPrice();
+    }
+
+    private void addAllToCart() {
+        new Thread(() -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            CartDao cartDao = db.cartDao();
+            List<Product> toAdd = new ArrayList<>();
+            if (!hats.isEmpty()) toAdd.add(hats.get(hatIndex));
+            if (!tops.isEmpty()) toAdd.add(tops.get(topIndex));
+            if (!bottoms.isEmpty()) toAdd.add(bottoms.get(bottomIndex));
+            if (!shoes.isEmpty()) toAdd.add(shoes.get(shoesIndex));
+            for (Product p : toAdd) {
+                Cart existing = null;
+                for (Cart c : cartDao.getCartItemsByUserId(currentUserId)) {
+                    if (c.getProductId() == p.getId()) { existing = c; break; }
+                }
+                if (existing != null) {
+                    existing.setQuantity(existing.getQuantity() + 1);
+                    cartDao.update(existing);
+                } else {
+                    Cart cart = new Cart();
+                    cart.setUserId(currentUserId);
+                    cart.setProductId(p.getId());
+                    cart.setQuantity(1);
+                    cartDao.insert(cart);
+                }
+            }
+            runOnUiThread(() -> Toast.makeText(this, "Все товары добавлены в корзину", Toast.LENGTH_SHORT).show());
+        }).start();
     }
 }
