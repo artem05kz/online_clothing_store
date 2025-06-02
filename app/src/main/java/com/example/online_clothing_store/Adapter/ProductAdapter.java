@@ -35,8 +35,13 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
     private final Set<Integer> favoriteProductIds;
     private final ExecutorService executor;
     private final AppDatabase db;
+    private final boolean isCompact;
 
     public ProductAdapter(Context context, List<Product> productList, boolean isGuestMode, int currentUserId) {
+        this(context, productList, isGuestMode, currentUserId, false);
+    }
+
+    public ProductAdapter(Context context, List<Product> productList, boolean isGuestMode, int currentUserId, boolean isCompact) {
         this.context = context;
         this.productList = productList;
         this.isGuestMode = isGuestMode;
@@ -44,6 +49,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         this.favoriteProductIds = new HashSet<>();
         this.executor = Executors.newFixedThreadPool(2); // Пул потоков для задач
         this.db = AppDatabase.getInstance(context);
+        this.isCompact = isCompact;
         loadFavorites();
     }
 
@@ -65,7 +71,8 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
     @NonNull
     @Override
     public ProductViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context).inflate(R.layout.item_product, parent, false);
+        int layoutId = isCompact ? R.layout.item_product_small : R.layout.item_product;
+        View view = LayoutInflater.from(context).inflate(layoutId, parent, false);
         return new ProductViewHolder(view);
     }
 
@@ -76,7 +83,9 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         // Установка данных
         holder.tvTitle.setText(product.getName());
         holder.tvPrice.setText(String.format("%.2f ₽", product.getPrice()));
-        holder.tvRating.setText(String.valueOf(product.getRating()));
+        if (holder.tvRating != null) {
+            holder.tvRating.setText(String.valueOf(product.getRating()));
+        }
 
         // Загрузка изображения
         if (product.getMainImageUrl() != null && !product.getMainImageUrl().isEmpty()) {

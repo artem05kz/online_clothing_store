@@ -34,7 +34,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingBottom="40dp">
 
             <!-- Приветствие пользователя -->
             <TextView
@@ -80,18 +81,8 @@
                 android:id="@+id/bannerPager"
                 android:layout_width="match_parent"
                 android:layout_height="180dp"
-                android:layout_marginBottom="16dp"
+                android:layout_marginBottom="20dp"
                 android:background="@drawable/edittext_rounded"/>
-
-            <com.google.android.material.tabs.TabLayout
-                android:id="@+id/tabDots"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                app:tabBackground="@drawable/tab_indicator"
-                app:tabGravity="center"
-                app:tabIndicatorHeight="0dp"
-                android:layout_marginBottom="16dp"/>
 
             <!-- Новые поступления -->
             <TextView
@@ -109,7 +100,7 @@
                 android:layout_height="240dp"
                 android:orientation="horizontal"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                android:layout_marginBottom="24dp"/>
+                android:layout_marginBottom="0dp"/>
 
             <!-- Рекомендации -->
             <TextView

@@ -46,6 +46,10 @@
             android:theme="@style/Theme.Online_clothing_store"
             android:windowSoftInputMode="adjustResize"/>
         <activity
+            android:name=".WardrobeActivity"
+            android:theme="@style/Theme.Online_clothing_store"
+            android:windowSoftInputMode="adjustResize"/>
+        <activity
             android:name=".CheckoutActivity"
             android:theme="@style/Theme.Online_clothing_store"
             android:windowSoftInputMode="adjustResize"/>
@@ -53,10 +57,6 @@
             android:name=".EditProfileActivity"
             android:theme="@style/Theme.Online_clothing_store"
             android:windowSoftInputMode="adjustResize"/>
-
-        <activity
-            android:name=".MainActivity"
-            android:exported="false" />
 
 
     </application>

@@ -13,6 +13,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.online_clothing_store.database.entities.User;
+import com.example.online_clothing_store.utils.AuthHelper;
 import com.example.online_clothing_store.utils.PasswordHasher;
 import com.example.online_clothing_store.database.AppDatabase;
 import com.example.online_clothing_store.R;
@@ -29,27 +30,40 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
+        new Thread(() -> {
+            User user = AuthHelper.tryAutoLogin(this);
+            if (user != null) {
+                runOnUiThread(() -> {
+                    // Переход на главный экран
+                    startActivity(new Intent(this, RecommendationsActivity.class));
+                    finish();
+                });
+            } else {
+                runOnUiThread(() -> {
+                    setContentView(R.layout.activity_login);
 
-        db = AppDatabase.getInstance(this);
-        etEmail = findViewById(R.id.EmailAddress);
-        etPassword = findViewById(R.id.TextPassword);
+                    db = AppDatabase.getInstance(this);
+                    etEmail = findViewById(R.id.EmailAddress);
+                    etPassword = findViewById(R.id.TextPassword);
 
-        Button loginButton = findViewById(R.id.loginButton);
-        loginButton.setOnClickListener(v -> attemptLogin());
+                    Button loginButton = findViewById(R.id.loginButton);
+                    loginButton.setOnClickListener(v -> attemptLogin());
 
-        TextView tvRegister = findViewById(R.id.tvRegisterLink);
-        tvRegister.setOnClickListener(v -> {
-            startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
-        });
+                    TextView tvRegister = findViewById(R.id.tvRegisterLink);
+                    tvRegister.setOnClickListener(v -> {
+                        startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
+                    });
 
-        TextView tvGuestLink = findViewById(R.id.tvGuestLink);
-        tvGuestLink.setOnClickListener(v -> {
-            Intent intent = new Intent(LoginActivity.this, CatalogActivity.class);
-            intent.putExtra("is_guest", true);
-            startActivity(intent);
-            finish();
-        });
+                    TextView tvGuestLink = findViewById(R.id.tvGuestLink);
+                    tvGuestLink.setOnClickListener(v -> {
+                        Intent intent = new Intent(LoginActivity.this, CatalogActivity.class);
+                        intent.putExtra("is_guest", true);
+                        startActivity(intent);
+                        finish();
+                    });
+                });
+            }
+        }).start();
     }
 
     private void attemptLogin() {
@@ -79,6 +93,7 @@ public class LoginActivity extends AppCompatActivity {
                                 SharedPreferences.Editor editor = prefs.edit();
                                 editor.putInt("user_id", user.getId());
                                 editor.apply();
+                                AuthHelper.saveCredentials(this, email, password);
                                 startActivity(new Intent(this, RecommendationsActivity.class));
                                 finish();
                             } else {

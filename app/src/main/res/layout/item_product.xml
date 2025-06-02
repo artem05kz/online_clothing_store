@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:padding="4dp"
     android:background="@color/background">
 
@@ -65,8 +65,7 @@
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_heart"
         app:layout_constraintEnd_toEndOf="@+id/ivProductImage"
-        app:layout_constraintTop_toTopOf="@+id/ivProductImage"
-        app:tint="@color/red" />
+        app:layout_constraintTop_toTopOf="@+id/ivProductImage" />
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cardView"

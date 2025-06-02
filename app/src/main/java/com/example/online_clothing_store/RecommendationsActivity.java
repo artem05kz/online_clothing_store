@@ -74,7 +74,7 @@ public class RecommendationsActivity extends AppCompatActivity {
 
                 runOnUiThread(() -> {
                     // Новые поступления
-                    newArrivalsAdapter = new ProductAdapter(this, newProducts, isGuestMode, currentUserId);
+                    newArrivalsAdapter = new ProductAdapter(this, newProducts, isGuestMode, currentUserId, true);
                     newArrivalsList.setAdapter(newArrivalsAdapter);
 
                     // Рекомендации

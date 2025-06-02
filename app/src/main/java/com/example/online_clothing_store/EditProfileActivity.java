@@ -73,9 +73,10 @@ public class EditProfileActivity extends AppCompatActivity {
         changeAccountButton.setOnClickListener(v -> {
             // Очищаем user_prefs
             prefs.edit().clear().apply();
-            // Переходим на экран логина
+            prefs.edit().clear().apply();
+            getSharedPreferences("auth_prefs", MODE_PRIVATE).edit().clear().apply();
             startActivity(new android.content.Intent(this, LoginActivity.class));
-            finishAffinity(); // Закрываем все предыдущие активити
+            finishAffinity();
         });
 
         findViewById(R.id.backButton).setOnClickListener(v -> finish());

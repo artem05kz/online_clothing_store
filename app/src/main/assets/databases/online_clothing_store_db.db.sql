@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS "orders" (
 	"user_id"	INTEGER NOT NULL,
 	"order_date"	TEXT DEFAULT CURRENT_TIMESTAMP,
 	"status"	TEXT DEFAULT 'В обработке',
+	"address"	TEXT,
 	PRIMARY KEY("id" AUTOINCREMENT),
 	FOREIGN KEY("user_id") REFERENCES "users"("id") ON DELETE CASCADE
 );

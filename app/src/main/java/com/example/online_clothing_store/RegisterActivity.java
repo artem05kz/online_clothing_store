@@ -11,6 +11,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.online_clothing_store.database.entities.User;
+import com.example.online_clothing_store.utils.AuthHelper;
 import com.example.online_clothing_store.utils.PasswordHasher;
 import com.example.online_clothing_store.database.AppDatabase;
 
@@ -71,6 +72,7 @@ public class RegisterActivity extends AppCompatActivity {
                 editor.putInt("user_id", (int) userId);
                 editor.apply();
                 Toast.makeText(this, "Регистрация успешна!", Toast.LENGTH_SHORT).show();
+                AuthHelper.saveCredentials(this, email, password);
                 startActivity(new Intent(this, LoginActivity.class));
                 finish();
             });

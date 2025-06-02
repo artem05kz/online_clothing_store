@@ -59,14 +59,9 @@ public class CatalogActivity extends AppCompatActivity {
             try {
                 AppDatabase db = AppDatabase.getInstance(getApplicationContext());
                 ProductDao productDao = db.productDao();
-
-                // Создание категорий, если их нет
                 createCategories(db);
-
-                // Проверка, есть ли продукты в базе
                 List<Product> productList = productDao.getAllProducts();
                 if (productList.isEmpty()) {
-                    // Создание и сохранение продуктов
                     Product product1 = new Product(
                             "Футболка NIKE",
                             1999,
@@ -74,9 +69,9 @@ public class CatalogActivity extends AppCompatActivity {
                             "M",
                             "Nike",
                             4.7,
-                            "https://i.pinimg.com/736x/e3/d0/95/e3d0952fd4a14fb6b6e257874ec8f873.jpg",
+                            "https://i.pinimg.com/736x/d5/66/a8/d566a8cda6e5bfb7ee9261885f5b9ea2.jpg",
                             "100% хлопок",
-                            1
+                            2
                     );
                     long productId1 = productDao.insertProduct(product1);
                     product1.setId((int) productId1);
@@ -84,28 +79,53 @@ public class CatalogActivity extends AppCompatActivity {
                     Product product2 = new Product(
                             "Джинсы Levi's",
                             2999,
-                            "Классические прямые джинсы",
+                            "Джинсы",
                             "32",
                             "Levi's",
                             4.9,
-                            "https://i.pinimg.com/736x/95/7e/38/957e384285f86c792ab4d84c6ad5b1bd.jpg",
+                            "https://i.pinimg.com/736x/fb/5d/ff/fb5dff754e24426ab01d6c67b867d8d8.jpg",
                             "98% хлопок, 2% эластан",
-                            2
+                            3
                     );
                     long productId2 = productDao.insertProduct(product2);
                     product2.setId((int) productId2);
 
-                    // Сохранение дополнительных изображений
+                    // Новые товары:
+                    Product product3 = new Product(
+                            "Кепка",
+                            1200,
+                            "Стильная кепка для города и спорта",
+                            "L",
+                            "Adidas",
+                            4.5,
+                            "https://i.pinimg.com/736x/e5/a8/b5/e5a8b5c3c07ed30cf53fbb2b1e91db80.jpg",
+                            "100% хлопок",
+                            1
+                    );
+                    long productId3 = productDao.insertProduct(product3);
+                    product3.setId((int) productId3);
+
+                    Product product4 = new Product(
+                            "Кеды Converse",
+                            3500,
+                            "Классические кеды для повседневной носки",
+                            "42",
+                            "Converse",
+                            4.8,
+                            "https://i.pinimg.com/736x/71/f0/db/71f0db5e25de58caabbaae9c72809bda.jpg",
+                            "Текстиль, резина",
+                            4
+                    );
+                    long productId4 = productDao.insertProduct(product4);
+                    product4.setId((int) productId4);
+
+                    // Сохранение дополнительных изображений для футболки
                     saveAdditionalImages((int) productId1, Arrays.asList(
-                            "https://i.pinimg.com/736x/70/6c/82/706c82553371adde376d2a160a23da91.jpg",
-                            "https://i.pinimg.com/736x/0a/69/a8/0a69a83720f021e4c28c9eecb846e8b9.jpg"
+                            "https://i.pinimg.com/736x/4c/f6/f0/4cf6f0f06ffca64af51fe14f461e76a9.jpg"
                     ));
 
-                    // Обновляем список продуктов
                     productList = productDao.getAllProducts();
                 }
-
-                // Обновляем UI на главном потоке
                 List<Product> finalProductList = productList;
                 runOnUiThread(() -> {
                     adapter = new ProductAdapter(this, finalProductList, isGuestMode, currentUserId);
@@ -141,11 +161,12 @@ public class CatalogActivity extends AppCompatActivity {
 
     private void createCategories(AppDatabase db) {
         try {
-            // Проверяем, есть ли уже категории
             if (db.categoryDao().getCategoryCount() == 0) {
-                Category menCategory = new Category("Мужская одежда");
-                Category womenCategory = new Category("Женская одежда");
-                db.categoryDao().insertAll(menCategory, womenCategory);
+                Category hats = new Category("Головные уборы");
+                Category tops = new Category("Верхняя одежда");
+                Category bottoms = new Category("Нижняя одежда");
+                Category shoes = new Category("Обувь");
+                db.categoryDao().insertAll(hats, tops, bottoms, shoes);
             }
         } catch (Exception e) {
             Log.e("CatalogActivity", "Ошибка создания категорий", e);
