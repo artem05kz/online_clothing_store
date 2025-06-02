@@ -78,5 +78,7 @@ public class CheckoutActivity extends AppCompatActivity {
                 });
             }).start();
         });
+
+        findViewById(R.id.backButton).setOnClickListener(v -> finish());
     }
 }

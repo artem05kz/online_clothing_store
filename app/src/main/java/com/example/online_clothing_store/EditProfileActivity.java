@@ -11,7 +11,7 @@ import com.example.online_clothing_store.database.entities.User;
 
 public class EditProfileActivity extends AppCompatActivity {
     private EditText nameInput, addressInput;
-    private Button saveButton;
+    private Button saveButton, changeAccountButton;
     private int currentUserId;
     private AppDatabase db;
 
@@ -23,6 +23,7 @@ public class EditProfileActivity extends AppCompatActivity {
         nameInput = findViewById(R.id.nameInput);
         addressInput = findViewById(R.id.addressInput);
         saveButton = findViewById(R.id.saveButton);
+        changeAccountButton = findViewById(R.id.changeAccountButton);
 
         SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
         currentUserId = prefs.getInt("user_id", -1);
@@ -68,5 +69,15 @@ public class EditProfileActivity extends AppCompatActivity {
                 }
             }).start();
         });
+
+        changeAccountButton.setOnClickListener(v -> {
+            // Очищаем user_prefs
+            prefs.edit().clear().apply();
+            // Переходим на экран логина
+            startActivity(new android.content.Intent(this, LoginActivity.class));
+            finishAffinity(); // Закрываем все предыдущие активити
+        });
+
+        findViewById(R.id.backButton).setOnClickListener(v -> finish());
     }
 }
