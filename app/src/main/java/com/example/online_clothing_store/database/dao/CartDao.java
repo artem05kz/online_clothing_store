@@ -5,6 +5,7 @@ import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Update;
 import androidx.room.Query;
+import androidx.room.OnConflictStrategy;
 import com.example.online_clothing_store.database.entities.Cart;
 import java.util.List;
 
@@ -21,7 +22,10 @@ public interface CartDao {
 
     @Delete
     void delete(Cart cart);
-
     @Query("DELETE FROM cart WHERE user_id = :userId")
     void deleteCartByUserId(int userId);
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertAll(Cart... carts);
+
 }

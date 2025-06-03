@@ -47,26 +47,6 @@
                 android:textColor="@color/black"
                 android:layout_marginBottom="16dp"/>
 
-            <!-- Поиск -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="16dp">
-
-                <EditText
-                    android:id="@+id/searchInput"
-                    android:layout_width="0dp"
-                    android:layout_height="48dp"
-                    android:layout_weight="1"
-                    android:hint="Поиск..."
-                    android:background="@drawable/edittext_rounded"
-                    android:paddingStart="16dp"
-                    android:textColorHint="@color/gray"
-                    android:textColor="@color/black"/>
-
-            </LinearLayout>
-
             <!-- Баннеры -->
             <TextView
                 android:layout_width="match_parent"

@@ -30,8 +30,7 @@ public abstract class AppDatabase extends RoomDatabase {
                                     context.getApplicationContext(),
                                     AppDatabase.class,
                                     DB_NAME
-                            ).createFromAsset("databases/" + DB_NAME)
-                            .build();
+                            ).build();
                 }
             }
         }

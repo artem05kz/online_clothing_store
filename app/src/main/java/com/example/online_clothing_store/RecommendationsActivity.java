@@ -26,6 +26,7 @@ import android.content.ClipboardManager;
 import com.example.online_clothing_store.database.dao.PromoDao;
 import com.example.online_clothing_store.database.entities.Promo;
 import com.squareup.picasso.Picasso;
+import com.example.online_clothing_store.sync.SyncHelper;
 
 public class RecommendationsActivity extends AppCompatActivity {
 
@@ -91,7 +92,9 @@ public class RecommendationsActivity extends AppCompatActivity {
                     // Рекомендации
                     recommendedAdapter = new RecommendationsAdapter(this, recommendedProducts, isGuestMode, currentUserId);
                     recommendationsList.setAdapter(recommendedAdapter);
+
                 });
+
             } catch (Exception e) {
                 Log.e("RecommendationsActivity", "Ошибка загрузки продуктов", e);
                 runOnUiThread(() -> Toast.makeText(this, "Ошибка загрузки рекомендаций", Toast.LENGTH_SHORT).show());
@@ -122,6 +125,20 @@ public class RecommendationsActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!isGuestMode && currentUserId != -1) {
+            Executors.newSingleThreadExecutor().execute(() -> {
+                SyncHelper syncHelper = new SyncHelper(this);
+                syncHelper.syncFavorites(currentUserId);
+                syncHelper.syncCart(currentUserId);
+                syncHelper.syncOrders(currentUserId);
+                syncHelper.syncPromos();
+                syncHelper.syncProducts();
+            });
+        }
+    }
     private void setupMenuButtons() {
         findViewById(R.id.imageButtonHome).setOnClickListener(v -> {
             // Уже на главной - обновляем страницу

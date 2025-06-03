@@ -55,12 +55,13 @@ public class CheckoutActivity extends AppCompatActivity {
                 return;
             }
 
-            // Оформление заказа
             new Thread(() -> {
                 Order order = new Order(currentUserId, address);
+                order.setId(null);
                 long orderId = db.orderDao().insert(order);
 
                 List<Cart> cartItems = db.cartDao().getCartItemsByUserId(currentUserId);
+
                 for (Cart cartItem : cartItems) {
                     OrderItem orderItem = new OrderItem();
                     orderItem.setOrderId((int) orderId);
@@ -68,8 +69,9 @@ public class CheckoutActivity extends AppCompatActivity {
                     orderItem.setQuantity(cartItem.getQuantity());
                     db.orderItemDao().insert(orderItem);
                 }
-
                 db.cartDao().deleteCartByUserId(currentUserId);
+
+                new com.example.online_clothing_store.sync.SyncHelper(this).syncOrders(currentUserId);
 
                 runOnUiThread(() -> {
                     Toast.makeText(this, "Заказ успешно оформлен", Toast.LENGTH_SHORT).show();

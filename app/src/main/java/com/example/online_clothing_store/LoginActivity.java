@@ -13,6 +13,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.online_clothing_store.database.entities.User;
+import com.example.online_clothing_store.sync.SyncHelper;
 import com.example.online_clothing_store.utils.AuthHelper;
 import com.example.online_clothing_store.utils.PasswordHasher;
 import com.example.online_clothing_store.database.AppDatabase;
@@ -30,18 +31,30 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         new Thread(() -> {
+            new SyncHelper(this).syncUsers();
             User user = AuthHelper.tryAutoLogin(this);
-            if (user != null) {
-                runOnUiThread(() -> {
-                    // Переход на главный экран
+
+            runOnUiThread(() -> {
+                if (user != null) {
+                    SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
+                    prefs.edit().putInt("user_id", user.getId()).apply();
+                    AuthHelper.saveCredentials(this, user.getEmail(), user.getPasswordHash());
+
+                    Executors.newSingleThreadExecutor().execute(() -> {
+                        SyncHelper syncHelper = new SyncHelper(this);
+                        syncHelper.syncFavorites(user.getId());
+                        syncHelper.syncCart(user.getId());
+                        syncHelper.syncOrders(user.getId());
+                        syncHelper.syncPromos();
+                        syncHelper.syncProducts();
+                    });
+
                     startActivity(new Intent(this, RecommendationsActivity.class));
                     finish();
-                });
-            } else {
-                runOnUiThread(() -> {
+                } else {
                     setContentView(R.layout.activity_login);
-
                     db = AppDatabase.getInstance(this);
                     etEmail = findViewById(R.id.EmailAddress);
                     etPassword = findViewById(R.id.TextPassword);
@@ -61,8 +74,8 @@ public class LoginActivity extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                     });
-                });
-            }
+                }
+            });
         }).start();
     }
 
@@ -94,6 +107,14 @@ public class LoginActivity extends AppCompatActivity {
                                 editor.putInt("user_id", user.getId());
                                 editor.apply();
                                 AuthHelper.saveCredentials(this, email, password);
+
+                                SyncHelper syncHelper = new SyncHelper(this);
+                                syncHelper.syncFavorites(user.getId());
+                                syncHelper.syncCart(user.getId());
+                                syncHelper.syncOrders(user.getId());
+                                syncHelper.syncPromos();
+                                syncHelper.syncProducts();
+
                                 startActivity(new Intent(this, RecommendationsActivity.class));
                                 finish();
                             } else {

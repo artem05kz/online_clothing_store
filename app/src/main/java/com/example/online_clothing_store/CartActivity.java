@@ -19,7 +19,10 @@ import com.example.online_clothing_store.database.entities.Cart;
 import com.example.online_clothing_store.database.entities.Product;
 import com.example.online_clothing_store.database.dao.PromoDao;
 import com.example.online_clothing_store.database.entities.Promo;
+import com.example.online_clothing_store.sync.SyncHelper;
+
 import java.util.List;
+import java.util.concurrent.Executors;
 
 public class CartActivity extends AppCompatActivity {
     private RecyclerView cartItemsList;
@@ -90,7 +93,15 @@ public class CartActivity extends AppCompatActivity {
         });
         setupMenuButtons();
     }
-
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Executors.newSingleThreadExecutor().execute(() -> {
+            SyncHelper syncHelper = new SyncHelper(this);
+            syncHelper.syncCart(currentUserId);
+        });
+        loadCartItems();
+    }
     private void loadCartItems() {
         new Thread(() -> {
             cartItems = db.cartDao().getCartItemsByUserId(currentUserId);

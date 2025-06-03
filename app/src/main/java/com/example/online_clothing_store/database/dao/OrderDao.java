@@ -10,4 +10,9 @@ public interface OrderDao {
     List<Order> getOrdersByUserId(int userId);
     @Insert
     long insert(Order order);
+    @Query("DELETE FROM orders WHERE user_id = :userId")
+    void deleteByUserId(int userId);
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertAll(Order... orders);
 }

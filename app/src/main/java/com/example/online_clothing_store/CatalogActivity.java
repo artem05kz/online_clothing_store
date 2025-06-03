@@ -14,6 +14,8 @@ import com.example.online_clothing_store.database.entities.Category;
 import com.example.online_clothing_store.database.entities.Product;
 import com.example.online_clothing_store.database.entities.ProductImage;
 import com.example.online_clothing_store.database.dao.ProductDao;
+import com.example.online_clothing_store.sync.SyncHelper;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -91,6 +93,16 @@ public class CatalogActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (!isGuestMode && currentUserId != -1) {
+            Executors.newSingleThreadExecutor().execute(() -> {
+                SyncHelper syncHelper = new SyncHelper(this);
+                syncHelper.syncFavorites(currentUserId);
+                syncHelper.syncCart(currentUserId);
+                syncHelper.syncOrders(currentUserId);
+                syncHelper.syncPromos();
+                syncHelper.syncProducts();
+            });
+        }
         loadProducts();
     }
     private void loadProducts() {

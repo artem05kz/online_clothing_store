@@ -19,8 +19,10 @@ import com.example.online_clothing_store.database.entities.Favorite;
 import com.example.online_clothing_store.database.entities.Order;
 import com.example.online_clothing_store.database.entities.Product;
 import com.example.online_clothing_store.database.entities.User;
+import com.example.online_clothing_store.sync.SyncHelper;
 import com.squareup.picasso.Picasso;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 public class ProfileActivity extends AppCompatActivity {
 
@@ -70,7 +72,12 @@ public class ProfileActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        loadUserData(); // Обновляем данные профиля после редактирования
+        Executors.newSingleThreadExecutor().execute(() -> {
+            SyncHelper syncHelper = new SyncHelper(this);
+            syncHelper.syncFavorites(currentUserId);
+            syncHelper.syncOrders(currentUserId);
+        });
+        loadUserData();
         loadOrderHistory();
         loadFavorites();
     }

@@ -6,10 +6,10 @@ import androidx.room.PrimaryKey;
 @Entity(tableName = "promos")
 public class Promo {
     @PrimaryKey(autoGenerate = true)
-    public int id;
+    public Integer id;
     public String imageUrl;
     public String code;
-    public int discountPercent;
+    public Integer discountPercent;
     public String description;
-    public boolean isActive;
+    public Boolean isActive;
 } 

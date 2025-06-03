@@ -10,7 +10,10 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.online_clothing_store.api.ApiClient;
+import com.example.online_clothing_store.api.ApiService;
 import com.example.online_clothing_store.database.entities.User;
+import com.example.online_clothing_store.sync.SyncHelper;
 import com.example.online_clothing_store.utils.AuthHelper;
 import com.example.online_clothing_store.utils.PasswordHasher;
 import com.example.online_clothing_store.database.AppDatabase;
@@ -19,6 +22,10 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
 import java.util.concurrent.Executors;
+
+import retrofit2.Call;
+import retrofit2.Response;
+import retrofit2.Callback;
 
 public class RegisterActivity extends AppCompatActivity {
     private AppDatabase db;
@@ -52,30 +59,38 @@ public class RegisterActivity extends AppCompatActivity {
 
         if (!validateInputs(name, email, password, confirmPassword)) return;
 
-        Executors.newSingleThreadExecutor().execute(() -> {
-            if (db.userDao().getUserByEmail(email) != null) {
-                runOnUiThread(() ->
-                        showError(etEmail, "Этот email уже зарегистрирован"));
-                return;
+        // Создаём пользователя без id
+        User newUser = new User();
+        newUser.setName(name);
+        newUser.setEmail(email);
+        newUser.setPasswordHash(PasswordHasher.hash(password));
+
+        ApiService apiService = ApiClient.getClient().create(ApiService.class);
+        apiService.registerUser(newUser).enqueue(new Callback<User>() {
+            @Override
+            public void onResponse(Call<User> call, Response<User> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    User registeredUser = response.body();
+                    Executors.newSingleThreadExecutor().execute(() -> {
+                        AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+                        db.userDao().insert(registeredUser);
+                    });
+                    runOnUiThread(() -> {
+                        SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
+                        prefs.edit().putInt("user_id", registeredUser.getId()).apply();
+                        AuthHelper.saveCredentials(RegisterActivity.this, registeredUser.getEmail(), password);
+                        Toast.makeText(RegisterActivity.this, "Регистрация успешна!", Toast.LENGTH_SHORT).show();
+                        startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
+                        finish();
+                    });
+                } else {
+                    runOnUiThread(() -> Toast.makeText(RegisterActivity.this, "Ошибка регистрации на сервере", Toast.LENGTH_SHORT).show());
+                }
             }
-
-            User newUser = new User();
-            newUser.setName(name);
-            newUser.setEmail(email);
-            newUser.setPasswordHash(PasswordHasher.hash(password));
-
-            long userId = db.userDao().insert(newUser);
-
-            runOnUiThread(() -> {
-                SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
-                SharedPreferences.Editor editor = prefs.edit();
-                editor.putInt("user_id", (int) userId);
-                editor.apply();
-                Toast.makeText(this, "Регистрация успешна!", Toast.LENGTH_SHORT).show();
-                AuthHelper.saveCredentials(this, email, password);
-                startActivity(new Intent(this, LoginActivity.class));
-                finish();
-            });
+            @Override
+            public void onFailure(Call<User> call, Throwable t) {
+                runOnUiThread(() -> Toast.makeText(RegisterActivity.this, "Ошибка сети: " + t.getMessage(), Toast.LENGTH_SHORT).show());
+            }
         });
     }
 

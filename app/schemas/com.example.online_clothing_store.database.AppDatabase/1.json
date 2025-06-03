@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "76884e89a7dd51cfaa97667b492a296d",
+    "identityHash": "fb6e1c723bed54b7ad91930699d95f94",
     "entities": [
       {
         "tableName": "users",
@@ -283,13 +283,12 @@
       },
       {
         "tableName": "orders",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `user_id` INTEGER NOT NULL, `order_date` TEXT DEFAULT CURRENT_TIMESTAMP, `status` TEXT DEFAULT 'В обработке', `address` TEXT, FOREIGN KEY(`user_id`) REFERENCES `users`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `user_id` INTEGER NOT NULL, `order_date` TEXT DEFAULT CURRENT_TIMESTAMP, `status` TEXT DEFAULT 'В обработке', `address` TEXT, FOREIGN KEY(`user_id`) REFERENCES `users`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
-            "affinity": "INTEGER",
-            "notNull": true
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "userId",
@@ -503,13 +502,12 @@
       },
       {
         "tableName": "promos",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `imageUrl` TEXT, `code` TEXT, `discountPercent` INTEGER NOT NULL, `description` TEXT, `isActive` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `imageUrl` TEXT, `code` TEXT, `discountPercent` INTEGER, `description` TEXT, `isActive` INTEGER)",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
-            "affinity": "INTEGER",
-            "notNull": true
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "imageUrl",
@@ -524,8 +522,7 @@
           {
             "fieldPath": "discountPercent",
             "columnName": "discountPercent",
-            "affinity": "INTEGER",
-            "notNull": true
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "description",
@@ -535,8 +532,7 @@
           {
             "fieldPath": "isActive",
             "columnName": "isActive",
-            "affinity": "INTEGER",
-            "notNull": true
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -549,7 +545,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '76884e89a7dd51cfaa97667b492a296d')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'fb6e1c723bed54b7ad91930699d95f94')"
     ]
   }
 }

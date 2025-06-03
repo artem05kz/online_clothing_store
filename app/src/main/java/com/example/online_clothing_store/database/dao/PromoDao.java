@@ -16,4 +16,9 @@ public interface PromoDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insert(Promo promo);
+    @Query("DELETE FROM promos")
+    void deleteAll();
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertAll(Promo... promos);
 } 

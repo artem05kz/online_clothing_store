@@ -10,13 +10,15 @@ public interface ApiService {
     // --- USERS ---
     @GET("users")
     Call<List<User>> getUsers();
-
+    @POST("users/register")
+    Call<User> registerUser(@Body User user);
     @POST("sync/users")
     Call<Void> syncUsers(@Body List<User> users);
-
+    @PUT("users/{id}")
+    Call<User> updateUser(@Path("id") int id, @Body User user);
     // --- FAVORITES ---
-    @GET("favorites?user_id={userId}")
-    Call<List<Favorite>> getFavorites(@Path("userId") int userId);
+    @GET("favorites")
+    Call<List<Favorite>> getFavorites(@Query("user_id") int userId);
 
     @POST("sync/favorites")
     Call<Void> syncFavorites(@Body List<Favorite> favorites);
@@ -29,15 +31,15 @@ public interface ApiService {
     Call<Void> syncProducts(@Body List<Product> products);
 
     // --- CART ---
-    @GET("cart?user_id={userId}")
-    Call<List<Cart>> getCart(@Path("userId") int userId);
+    @GET
+    ("cart") Call<List<Cart>> getCart(@Query("user_id") int userId);
 
     @POST("sync/cart")
     Call<Void> syncCart(@Body List<Cart> cartItems);
 
     // --- ORDERS ---
-    @GET("orders?user_id={userId}")
-    Call<List<Order>> getOrders(@Path("userId") int userId);
+    @GET
+    ("orders") Call<List<Order>> getOrders(@Query("user_id") int userId);
 
     @POST("sync/orders")
     Call<Void> syncOrders(@Body List<Order> orders);

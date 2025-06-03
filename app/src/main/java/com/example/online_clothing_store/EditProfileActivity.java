@@ -6,8 +6,17 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.online_clothing_store.api.ApiClient;
+import com.example.online_clothing_store.api.ApiService;
 import com.example.online_clothing_store.database.AppDatabase;
 import com.example.online_clothing_store.database.entities.User;
+
+import java.util.concurrent.Executors;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class EditProfileActivity extends AppCompatActivity {
     private EditText nameInput, addressInput;
@@ -55,24 +64,34 @@ public class EditProfileActivity extends AppCompatActivity {
                 return;
             }
 
-            // Обновление данных пользователя
-            new Thread(() -> {
+            // Обновляем локально
+            Executors.newSingleThreadExecutor().execute(() -> {
                 User user = db.userDao().getUserById(currentUserId);
-                if (user != null) {
-                    user.setName(newName);
-                    user.setAddress(newAddress);
-                    db.userDao().update(user);
-                    runOnUiThread(() -> {
-                        Toast.makeText(this, "Профиль обновлён", Toast.LENGTH_SHORT).show();
-                        finish();
+                user.setName(newName);
+                user.setAddress(newAddress);
+                db.userDao().update(user);
+
+                // Синхронизация с сервером
+                runOnUiThread(() -> {
+                    ApiService apiService = ApiClient.getClient().create(ApiService.class);
+                    apiService.updateUser(user.getId(), user).enqueue(new Callback<User>() {
+                        @Override
+                        public void onResponse(Call<User> call, Response<User> response) {
+                            if (response.isSuccessful()) {
+                                Executors.newSingleThreadExecutor().execute(() -> db.userDao().insert(response.body()));
+                                Toast.makeText(EditProfileActivity.this, "Профиль обновлён", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                        @Override
+                        public void onFailure(Call<User> call, Throwable t) {
+                            Toast.makeText(EditProfileActivity.this, "Ошибка обновления профиля", Toast.LENGTH_SHORT).show();
+                        }
                     });
-                }
-            }).start();
+                });
+            });
         });
 
         changeAccountButton.setOnClickListener(v -> {
-            // Очищаем user_prefs
-            prefs.edit().clear().apply();
             prefs.edit().clear().apply();
             getSharedPreferences("auth_prefs", MODE_PRIVATE).edit().clear().apply();
             startActivity(new android.content.Intent(this, LoginActivity.class));

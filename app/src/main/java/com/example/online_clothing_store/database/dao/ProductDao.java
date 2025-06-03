@@ -23,6 +23,8 @@ public interface ProductDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(Product... products);
+    @Query("DELETE FROM products")
+    void deleteAll();
 
     @Query("SELECT * FROM products ORDER BY id DESC LIMIT 10")
     List<Product> getNewArrivals();

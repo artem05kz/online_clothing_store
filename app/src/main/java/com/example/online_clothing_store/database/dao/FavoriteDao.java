@@ -24,4 +24,8 @@ public interface FavoriteDao {
             "INNER JOIN favorites ON products.id = favorites.product_id " +
             "WHERE favorites.user_id = :userId")
     List<Product> getFavoriteProductsForUser(int userId);
+    @Query("DELETE FROM favorites WHERE user_id = :userId")
+    void deleteByUserId(int userId);
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertAll(Favorite... favorites);
 }

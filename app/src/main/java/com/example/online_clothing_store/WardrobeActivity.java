@@ -14,6 +14,7 @@ import com.example.online_clothing_store.database.dao.CartDao;
 import com.example.online_clothing_store.database.dao.FavoriteDao;
 import com.example.online_clothing_store.database.entities.Cart;
 import com.example.online_clothing_store.database.entities.Product;
+import com.example.online_clothing_store.sync.SyncHelper;
 import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 import java.util.List;
@@ -184,6 +185,9 @@ public class WardrobeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        SyncHelper syncHelper = new SyncHelper(this);
+        syncHelper.syncFavorites(currentUserId);
+        loadFavoritesAndSetup();
         updateTotalPrice();
     }
 
