@@ -107,15 +107,27 @@ public class LoginActivity extends AppCompatActivity {
                                 editor.apply();
                                 AuthHelper.saveCredentials(this, email, password);
 
-                                SyncHelper syncHelper = new SyncHelper(this);
-                                syncHelper.syncFavorites(user.getId());
-                                syncHelper.syncCart(user.getId());
-                                syncHelper.syncOrders(user.getId());
-                                syncHelper.syncPromos();
-                                syncHelper.syncProducts();
-
-                                startActivity(new Intent(this, RecommendationsActivity.class));
-                                finish();
+                                // Выполняем полную синхронизацию только при входе
+                                Executors.newSingleThreadExecutor().execute(() -> {
+                                    try {
+                                        SyncHelper syncHelper = new SyncHelper(this);
+                                        syncHelper.syncFavorites(user.getId());
+                                        syncHelper.syncCart(user.getId());
+                                        syncHelper.syncOrders(user.getId());
+                                        syncHelper.syncPromos();
+                                        syncHelper.syncProducts();
+                                        
+                                        runOnUiThread(() -> {
+                                            startActivity(new Intent(this, RecommendationsActivity.class));
+                                            finish();
+                                        });
+                                    } catch (Exception e) {
+                                        Log.e("LoginActivity", "Ошибка синхронизации", e);
+                                        runOnUiThread(() -> {
+                                            Toast.makeText(this, "Ошибка синхронизации данных", Toast.LENGTH_SHORT).show();
+                                        });
+                                    }
+                                });
                             } else {
                                 showError(etPassword, "Неверный пароль");
                             }

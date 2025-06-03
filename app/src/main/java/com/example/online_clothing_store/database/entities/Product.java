@@ -78,7 +78,7 @@ public class Product implements Serializable {
 
     public void setRating(double rating) {this.rating = rating;}
 
-    public void setMainImageUrl(String imageUrls) {this.mainImageUrl = mainImageUrl;}
+    public void setMainImageUrl(String mainImageUrl) {this.mainImageUrl = mainImageUrl;}
 
     public void setComposition(String composition) {this.composition = composition;}
     public void setCategoryId(Integer categoryId) { this.categoryId = categoryId; }

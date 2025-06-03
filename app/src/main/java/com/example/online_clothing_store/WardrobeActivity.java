@@ -3,6 +3,8 @@ package com.example.online_clothing_store;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -10,14 +12,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.online_clothing_store.database.AppDatabase;
-import com.example.online_clothing_store.database.dao.CartDao;
-import com.example.online_clothing_store.database.dao.FavoriteDao;
-import com.example.online_clothing_store.database.entities.Cart;
 import com.example.online_clothing_store.database.entities.Product;
-import com.example.online_clothing_store.sync.SyncHelper;
+import com.example.online_clothing_store.database.entities.Cart;
 import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 public class WardrobeActivity extends AppCompatActivity {
     private int currentUserId;
@@ -31,6 +31,7 @@ public class WardrobeActivity extends AppCompatActivity {
     private ImageButton btnHatPrev, btnHatNext, btnShirtPrev, btnShirtNext, btnPantsPrev, btnPantsNext, btnShoesPrev, btnShoesNext;
     private TextView tvTotalPrice;
     private Button btnGenerate;
+    private AppDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,16 +40,61 @@ public class WardrobeActivity extends AppCompatActivity {
 
         SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
         currentUserId = prefs.getInt("user_id", -1);
+
         if (currentUserId == -1) {
             Toast.makeText(this, "Ошибка: пользователь не авторизован", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
+        db = AppDatabase.getInstance(this);
+        setupWardrobeUI();
+        loadFavoritesAndSetup();
+        setupMenuButtons();
+        setupImageClicks();
+    }
+
+    private void loadFavoritesAndSetup() {
+        new Thread(() -> {
+            List<Product> favoriteProducts = db.favoriteDao().getFavoriteProductsForUser(currentUserId);
+            Log.d("WardrobeActivity", "Загружено избранных товаров: " + favoriteProducts.size());
+            for (Product product : favoriteProducts) {
+                Log.d("WardrobeActivity", "Товар: id=" + product.getId() + 
+                    ", name=" + product.getName() + 
+                    ", categoryId=" + product.getCategoryId() + 
+                    ", imageUrl=" + product.getMainImageUrl());
+                if (product.getCategoryId() != null) {
+                    switch (product.getCategoryId()) {
+                        case 1: // Шляпы
+                            hats.add(product);
+                            break;
+                        case 2: // Верхняя одежда
+                            tops.add(product);
+                            break;
+                        case 3: // Нижняя одежда
+                            bottoms.add(product);
+                            break;
+                        case 4: // Обувь
+                            shoes.add(product);
+                            break;
+                    }
+                }
+            }
+            Log.d("WardrobeActivity", "Распределение по категориям: " +
+                "шляпы=" + hats.size() + 
+                ", верх=" + tops.size() + 
+                ", низ=" + bottoms.size() + 
+                ", обувь=" + shoes.size());
+            runOnUiThread(this::updateUI);
+        }).start();
+    }
+
+    private void setupWardrobeUI() {
         ivHat = findViewById(R.id.ivHat);
         ivShirt = findViewById(R.id.ivShirt);
         ivPants = findViewById(R.id.ivPants);
         ivShoes = findViewById(R.id.ivShoes);
+
         btnHatPrev = findViewById(R.id.btnHatPrev);
         btnHatNext = findViewById(R.id.btnHatNext);
         btnShirtPrev = findViewById(R.id.btnShirtPrev);
@@ -57,59 +103,47 @@ public class WardrobeActivity extends AppCompatActivity {
         btnPantsNext = findViewById(R.id.btnPantsNext);
         btnShoesPrev = findViewById(R.id.btnShoesPrev);
         btnShoesNext = findViewById(R.id.btnShoesNext);
+
         tvTotalPrice = findViewById(R.id.tvTotalPrice);
         btnGenerate = findViewById(R.id.btnGenerate);
 
-        setupMenuButtons();
-        loadFavoritesAndSetup();
-        setupImageClicks();
-        btnGenerate.setOnClickListener(v -> addAllToCart());
+        btnGenerate.setOnClickListener(v -> {
+            hatIndex = (int) (Math.random() * hats.size());
+            topIndex = (int) (Math.random() * tops.size());
+            bottomIndex = (int) (Math.random() * bottoms.size());
+            shoesIndex = (int) (Math.random() * shoes.size());
+            updateUI();
+        });
     }
 
-    private void loadFavoritesAndSetup() {
-        new Thread(() -> {
-            AppDatabase db = AppDatabase.getInstance(this);
-            FavoriteDao favoriteDao = db.favoriteDao();
-            List<Product> favorites = favoriteDao.getFavoriteProductsForUser(currentUserId);
-            for (Product p : favorites) {
-                if (p.getCategoryId() == null) continue;
-                switch (p.getCategoryId()) {
-                    case 1: hats.add(p); break;
-                    case 2: tops.add(p); break;
-                    case 3: bottoms.add(p); break;
-                    case 4: shoes.add(p); break;
-                }
-            }
-            runOnUiThread(this::setupWardrobeUI);
-        }).start();
-    }
-
-    private void setupWardrobeUI() {
-        showProductInCategory(ivHat, hats, hatIndex, R.drawable.ic_cap);
-        showProductInCategory(ivShirt, tops, topIndex, R.drawable.ic_shirt);
-        showProductInCategory(ivPants, bottoms, bottomIndex, R.drawable.ic_pants);
-        showProductInCategory(ivShoes, shoes, shoesIndex, R.drawable.ic_shoes);
-        btnHatPrev.setOnClickListener(v -> { switchProduct(hats, -1, "hat"); updateTotalPrice(); });
-        btnHatNext.setOnClickListener(v -> { switchProduct(hats, 1, "hat"); updateTotalPrice(); });
-        btnShirtPrev.setOnClickListener(v -> { switchProduct(tops, -1, "top"); updateTotalPrice(); });
-        btnShirtNext.setOnClickListener(v -> { switchProduct(tops, 1, "top"); updateTotalPrice(); });
-        btnPantsPrev.setOnClickListener(v -> { switchProduct(bottoms, -1, "bottom"); updateTotalPrice(); });
-        btnPantsNext.setOnClickListener(v -> { switchProduct(bottoms, 1, "bottom"); updateTotalPrice(); });
-        btnShoesPrev.setOnClickListener(v -> { switchProduct(shoes, -1, "shoes"); updateTotalPrice(); });
-        btnShoesNext.setOnClickListener(v -> { switchProduct(shoes, 1, "shoes"); updateTotalPrice(); });
+    private void updateUI() {
+        showProductInCategory(ivHat, hats, hatIndex, R.drawable.placeholder);
+        showProductInCategory(ivShirt, tops, topIndex, R.drawable.placeholder);
+        showProductInCategory(ivPants, bottoms, bottomIndex, R.drawable.placeholder);
+        showProductInCategory(ivShoes, shoes, shoesIndex, R.drawable.placeholder);
         updateTotalPrice();
     }
 
     private void showProductInCategory(ImageView iv, List<Product> list, int index, int placeholderRes) {
         if (list.isEmpty()) {
+            Log.d("WardrobeActivity", "Список товаров пуст, показываем placeholder");
             iv.setImageResource(placeholderRes);
+            return;
+        }
+        Product product = list.get(index);
+        Log.d("WardrobeActivity", "Загрузка изображения для товара: id=" + product.getId() + 
+            ", name=" + product.getName() + 
+            ", imageUrl=" + product.getMainImageUrl());
+        if (product.getMainImageUrl() != null && !product.getMainImageUrl().isEmpty()) {
+            Picasso.get()
+                    .load(product.getMainImageUrl())
+                    .placeholder(placeholderRes)
+                    .error(placeholderRes)
+                    .into(iv);
+            Log.d("WardrobeActivity", "Изображение загружается: " + product.getMainImageUrl());
         } else {
-            Product p = list.get(index);
-            if (p.getMainImageUrl() != null && !p.getMainImageUrl().isEmpty()) {
-                Picasso.get().load(p.getMainImageUrl()).placeholder(placeholderRes).error(placeholderRes).into(iv);
-            } else {
-                iv.setImageResource(placeholderRes);
-            }
+            Log.d("WardrobeActivity", "URL изображения пустой, показываем placeholder");
+            iv.setImageResource(placeholderRes);
         }
     }
 
@@ -118,21 +152,22 @@ public class WardrobeActivity extends AppCompatActivity {
         switch (type) {
             case "hat":
                 hatIndex = (hatIndex + delta + list.size()) % list.size();
-                showProductInCategory(ivHat, list, hatIndex, R.drawable.ic_cap);
+                showProductInCategory(ivHat, list, hatIndex, R.drawable.placeholder);
                 break;
-            case "top":
+            case "shirt":
                 topIndex = (topIndex + delta + list.size()) % list.size();
-                showProductInCategory(ivShirt, list, topIndex, R.drawable.ic_shirt);
+                showProductInCategory(ivShirt, list, topIndex, R.drawable.placeholder);
                 break;
-            case "bottom":
+            case "pants":
                 bottomIndex = (bottomIndex + delta + list.size()) % list.size();
-                showProductInCategory(ivPants, list, bottomIndex, R.drawable.ic_pants);
+                showProductInCategory(ivPants, list, bottomIndex, R.drawable.placeholder);
                 break;
             case "shoes":
                 shoesIndex = (shoesIndex + delta + list.size()) % list.size();
-                showProductInCategory(ivShoes, list, shoesIndex, R.drawable.ic_shoes);
+                showProductInCategory(ivShoes, list, shoesIndex, R.drawable.placeholder);
                 break;
         }
+        updateTotalPrice();
     }
 
     private void setupMenuButtons() {
@@ -145,7 +180,7 @@ public class WardrobeActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.imageButtonWardrobe).setOnClickListener(v -> {
-            startActivity(new Intent(this, WardrobeActivity.class));
+            Toast.makeText(this, "Вы уже в гардеробе", Toast.LENGTH_SHORT).show();
         });
 
         findViewById(R.id.imageButtonCart).setOnClickListener(v -> {
@@ -158,6 +193,15 @@ public class WardrobeActivity extends AppCompatActivity {
     }
 
     private void setupImageClicks() {
+        btnHatPrev.setOnClickListener(v -> switchProduct(hats, -1, "hat"));
+        btnHatNext.setOnClickListener(v -> switchProduct(hats, 1, "hat"));
+        btnShirtPrev.setOnClickListener(v -> switchProduct(tops, -1, "shirt"));
+        btnShirtNext.setOnClickListener(v -> switchProduct(tops, 1, "shirt"));
+        btnPantsPrev.setOnClickListener(v -> switchProduct(bottoms, -1, "pants"));
+        btnPantsNext.setOnClickListener(v -> switchProduct(bottoms, 1, "pants"));
+        btnShoesPrev.setOnClickListener(v -> switchProduct(shoes, -1, "shoes"));
+        btnShoesNext.setOnClickListener(v -> switchProduct(shoes, 1, "shoes"));
+
         ivHat.setOnClickListener(v -> openProductDetail(hats, hatIndex));
         ivShirt.setOnClickListener(v -> openProductDetail(tops, topIndex));
         ivPants.setOnClickListener(v -> openProductDetail(bottoms, bottomIndex));
@@ -165,10 +209,9 @@ public class WardrobeActivity extends AppCompatActivity {
     }
 
     private void openProductDetail(List<Product> list, int index) {
-        if (list.isEmpty()) return;
-        Product p = list.get(index);
+        if (list.isEmpty() || index < 0 || index >= list.size()) return;
         Intent intent = new Intent(this, ProductDetailActivity.class);
-        intent.putExtra("product", p);
+        intent.putExtra("product", list.get(index));
         startActivity(intent);
     }
 
@@ -178,45 +221,55 @@ public class WardrobeActivity extends AppCompatActivity {
         if (!tops.isEmpty()) total += tops.get(topIndex).getPrice();
         if (!bottoms.isEmpty()) total += bottoms.get(bottomIndex).getPrice();
         if (!shoes.isEmpty()) total += shoes.get(shoesIndex).getPrice();
-        String text = "Стоимость образа: " + (int)total + " ₽";
-        tvTotalPrice.setText(text);
+        tvTotalPrice.setText(String.format("%.2f ₽", total));
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        SyncHelper syncHelper = new SyncHelper(this);
-        syncHelper.syncFavorites(currentUserId);
         loadFavoritesAndSetup();
-        updateTotalPrice();
     }
 
     private void addAllToCart() {
+        if (hats.isEmpty() || tops.isEmpty() || bottoms.isEmpty() || shoes.isEmpty()) {
+            Toast.makeText(this, "Не все категории заполнены", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         new Thread(() -> {
-            AppDatabase db = AppDatabase.getInstance(this);
-            CartDao cartDao = db.cartDao();
-            List<Product> toAdd = new ArrayList<>();
-            if (!hats.isEmpty()) toAdd.add(hats.get(hatIndex));
-            if (!tops.isEmpty()) toAdd.add(tops.get(topIndex));
-            if (!bottoms.isEmpty()) toAdd.add(bottoms.get(bottomIndex));
-            if (!shoes.isEmpty()) toAdd.add(shoes.get(shoesIndex));
-            for (Product p : toAdd) {
-                Cart existing = null;
-                for (Cart c : cartDao.getCartItemsByUserId(currentUserId)) {
-                    if (c.getProductId() == p.getId()) { existing = c; break; }
-                }
-                if (existing != null) {
-                    existing.setQuantity(existing.getQuantity() + 1);
-                    cartDao.update(existing);
-                } else {
-                    Cart cart = new Cart();
-                    cart.setUserId(currentUserId);
-                    cart.setProductId(p.getId());
-                    cart.setQuantity(1);
-                    cartDao.insert(cart);
-                }
+            try {
+                Cart hatCart = new Cart();
+                hatCart.setUserId(currentUserId);
+                hatCart.setProductId(hats.get(hatIndex).getId());
+                hatCart.setQuantity(1);
+                db.cartDao().insert(hatCart);
+
+                Cart topCart = new Cart();
+                topCart.setUserId(currentUserId);
+                topCart.setProductId(tops.get(topIndex).getId());
+                topCart.setQuantity(1);
+                db.cartDao().insert(topCart);
+
+                Cart bottomCart = new Cart();
+                bottomCart.setUserId(currentUserId);
+                bottomCart.setProductId(bottoms.get(bottomIndex).getId());
+                bottomCart.setQuantity(1);
+                db.cartDao().insert(bottomCart);
+
+                Cart shoesCart = new Cart();
+                shoesCart.setUserId(currentUserId);
+                shoesCart.setProductId(shoes.get(shoesIndex).getId());
+                shoesCart.setQuantity(1);
+                db.cartDao().insert(shoesCart);
+
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Все товары добавлены в корзину", Toast.LENGTH_SHORT).show();
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Ошибка при добавлении в корзину", Toast.LENGTH_SHORT).show();
+                });
             }
-            runOnUiThread(() -> Toast.makeText(this, "Все товары добавлены в корзину", Toast.LENGTH_SHORT).show());
         }).start();
     }
 }

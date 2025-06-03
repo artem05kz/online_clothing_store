@@ -19,7 +19,6 @@ import com.example.online_clothing_store.database.entities.Cart;
 import com.example.online_clothing_store.database.entities.Product;
 import com.example.online_clothing_store.database.dao.PromoDao;
 import com.example.online_clothing_store.database.entities.Promo;
-import com.example.online_clothing_store.sync.SyncHelper;
 
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -93,15 +92,13 @@ public class CartActivity extends AppCompatActivity {
         });
         setupMenuButtons();
     }
+
     @Override
     protected void onResume() {
         super.onResume();
-        Executors.newSingleThreadExecutor().execute(() -> {
-            SyncHelper syncHelper = new SyncHelper(this);
-            syncHelper.syncCart(currentUserId);
-        });
         loadCartItems();
     }
+
     private void loadCartItems() {
         new Thread(() -> {
             cartItems = db.cartDao().getCartItemsByUserId(currentUserId);
@@ -118,7 +115,7 @@ public class CartActivity extends AppCompatActivity {
             db.cartDao().delete(cartItem);
             runOnUiThread(() -> {
                 cartItems.remove(cartItem);
-                runOnUiThread(() -> adapter.notifyDataSetChanged());
+                adapter.notifyDataSetChanged();
                 updateTotalPrice();
             });
         }).start();
@@ -166,14 +163,17 @@ public class CartActivity extends AppCompatActivity {
                     total += product.getPrice() * item.getQuantity();
                 }
             }
-            double finalTotal = total;
+            
+            double discountedTotal = total;
             if (appliedPromo != null && appliedPromo.discountPercent > 0) {
-                finalTotal = finalTotal * (1 - appliedPromo.discountPercent / 100.0);
+                discountedTotal = total * (1 - appliedPromo.discountPercent / 100.0);
             }
+            
+            final double finalTotal = discountedTotal;
             lastTotal = finalTotal;
-            final double totalForUi = finalTotal;
+            
             runOnUiThread(() -> {
-                totalPrice.setText(String.format("%.2f ₽", totalForUi));
+                totalPrice.setText(String.format("%.2f ₽", finalTotal));
             });
         }).start();
     }

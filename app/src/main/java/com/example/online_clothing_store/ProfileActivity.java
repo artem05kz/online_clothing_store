@@ -3,6 +3,7 @@ package com.example.online_clothing_store;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageButton;
@@ -15,6 +16,7 @@ import com.example.online_clothing_store.database.AppDatabase;
 import com.example.online_clothing_store.database.dao.FavoriteDao;
 import com.example.online_clothing_store.database.dao.OrderDao;
 import com.example.online_clothing_store.database.dao.UserDao;
+import com.example.online_clothing_store.database.entities.Cart;
 import com.example.online_clothing_store.database.entities.Favorite;
 import com.example.online_clothing_store.database.entities.Order;
 import com.example.online_clothing_store.database.entities.Product;
@@ -30,6 +32,9 @@ public class ProfileActivity extends AppCompatActivity {
     private LinearLayout favoritesContainer, ordersContainer;
     private int currentUserId;
     private ImageButton ibEdit;
+    private SyncHelper syncHelper;
+    private AppDatabase db;
+    private TextView tvFavoritesCount, tvCartCount, tvOrdersCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,11 +51,15 @@ public class ProfileActivity extends AppCompatActivity {
             return;
         }
 
+        db = AppDatabase.getInstance(this);
         tvUserName = findViewById(R.id.tvUserName);
         tvAddress = findViewById(R.id.tvAddress);
         favoritesContainer = findViewById(R.id.favoritesContainer);
         ordersContainer = findViewById(R.id.ordersContainer);
         ibEdit = findViewById(R.id.ibEdit);
+        tvFavoritesCount = findViewById(R.id.tvFavoritesCount);
+        tvCartCount = findViewById(R.id.tvCartCount);
+        tvOrdersCount = findViewById(R.id.tvOrdersCount);
 
         ImageButton ibEdit = findViewById(R.id.ibEdit);
         ibEdit.setOnClickListener(v -> {
@@ -65,32 +74,56 @@ public class ProfileActivity extends AppCompatActivity {
         loadUserData();
         loadFavorites();
         loadOrderHistory();
+
+        syncHelper = new SyncHelper(this);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        Executors.newSingleThreadExecutor().execute(() -> {
-            SyncHelper syncHelper = new SyncHelper(this);
-            syncHelper.syncFavorites(currentUserId);
-            syncHelper.syncOrders(currentUserId);
-        });
+        syncUserData();
         loadUserData();
         loadOrderHistory();
         loadFavorites();
     }
-    private void loadUserData() {
-        new Thread(() -> {
-            AppDatabase db = AppDatabase.getInstance(this);
-            UserDao userDao = db.userDao();
-            User user = userDao.getUserById(currentUserId);
 
-            runOnUiThread(() -> {
-                if (user != null) {
-                    tvUserName.setText(user.getName());
-                    tvAddress.setText(user.getAddress() != null ? user.getAddress() : "Адрес не указан");
-                }
-            });
+    private void syncUserData() {
+        Log.d("ProfileActivity", "Загрузка данных из локальной БД");
+        loadUserData();
+    }
+
+    private void loadUserData() {
+        Log.d("ProfileActivity", "Загрузка данных пользователя");
+        int userId = getUserId();
+        if (userId == -1) {
+            Toast.makeText(this, "Ошибка: пользователь не авторизован", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        new Thread(() -> {
+            try {
+                User user = db.userDao().getUserById(userId);
+                List<Favorite> favorites = db.favoriteDao().getFavoritesByUserId(userId);
+                List<Cart> cartItems = db.cartDao().getCartItemsByUserId(userId);
+                List<Order> orders = db.orderDao().getOrdersByUserId(userId);
+
+                runOnUiThread(() -> {
+                    if (user != null) {
+                        tvUserName.setText(user.getName());
+                        tvAddress.setText(user.getAddress() != null ? user.getAddress() : "Адрес не указан");
+                    }
+                    updateFavoritesCount(favorites.size());
+                    updateCartCount(cartItems.size());
+                    updateOrdersCount(orders.size());
+                    Log.d("ProfileActivity", "Данные пользователя загружены и отображены");
+                });
+            } catch (Exception e) {
+                Log.e("ProfileActivity", "Ошибка загрузки данных", e);
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Ошибка загрузки данных", Toast.LENGTH_SHORT).show();
+                });
+            }
         }).start();
     }
 
@@ -184,5 +217,27 @@ public class ProfileActivity extends AppCompatActivity {
             // Переход в профиль
             startActivity(new Intent(this, RecommendationsActivity.class));
         });
+    }
+
+    private int getUserId() {
+        return currentUserId;
+    }
+
+    private void updateFavoritesCount(int count) {
+        if (tvFavoritesCount != null) {
+            tvFavoritesCount.setText(String.valueOf(count));
+        }
+    }
+
+    private void updateCartCount(int count) {
+        if (tvCartCount != null) {
+            tvCartCount.setText(String.valueOf(count));
+        }
+    }
+
+    private void updateOrdersCount(int count) {
+        if (tvOrdersCount != null) {
+            tvOrdersCount.setText(String.valueOf(count));
+        }
     }
 }

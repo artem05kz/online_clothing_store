@@ -142,16 +142,6 @@ public class RecommendationsActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (!isGuestMode && currentUserId != -1) {
-            Executors.newSingleThreadExecutor().execute(() -> {
-                SyncHelper syncHelper = new SyncHelper(this);
-                syncHelper.syncFavorites(currentUserId);
-                syncHelper.syncCart(currentUserId);
-                syncHelper.syncOrders(currentUserId);
-                syncHelper.syncPromos();
-                syncHelper.syncProducts();
-            });
-        }
         loadProducts();
         loadPromoBanners();
     }

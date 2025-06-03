@@ -27,6 +27,9 @@ public interface ApiService {
     @GET("products")
     Call<List<Product>> getProducts();
 
+    @GET("products/with-categories")
+    Call<List<Product>> getProductsWithCategories();
+
     @POST("sync/products")
     Call<Void> syncProducts(@Body List<Product> products);
 
@@ -53,4 +56,8 @@ public interface ApiService {
 
     @GET("promos/{code}")
     Call<Promo> getPromoByCode(@Path("code") String code);
+
+    // --- CATEGORIES ---
+    @GET("categories")
+    Call<List<Category>> getCategories();
 }

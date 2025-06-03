@@ -3,6 +3,7 @@ package com.example.online_clothing_store;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -12,6 +13,7 @@ import com.example.online_clothing_store.database.entities.Cart;
 import com.example.online_clothing_store.database.entities.Order;
 import com.example.online_clothing_store.database.entities.OrderItem;
 import com.example.online_clothing_store.database.entities.User;
+import com.example.online_clothing_store.sync.SyncHelper;
 import java.util.List;
 
 public class CheckoutActivity extends AppCompatActivity {
@@ -55,28 +57,43 @@ public class CheckoutActivity extends AppCompatActivity {
             }
 
             new Thread(() -> {
-                Order order = new Order(currentUserId, address);
-                order.setId(null);
-                long orderId = db.orderDao().insert(order);
+                try {
+                    // Создаем заказ
+                    Order order = new Order(currentUserId, address);
+                    order.setId(null);
+                    long orderId = db.orderDao().insert(order);
 
-                List<Cart> cartItems = db.cartDao().getCartItemsByUserId(currentUserId);
+                    // Получаем товары из корзины
+                    List<Cart> cartItems = db.cartDao().getCartItemsByUserId(currentUserId);
 
-                for (Cart cartItem : cartItems) {
-                    OrderItem orderItem = new OrderItem();
-                    orderItem.setOrderId((int) orderId);
-                    orderItem.setProductId(cartItem.getProductId());
-                    orderItem.setQuantity(cartItem.getQuantity());
-                    db.orderItemDao().insert(orderItem);
+                    // Создаем элементы заказа
+                    for (Cart cartItem : cartItems) {
+                        OrderItem orderItem = new OrderItem();
+                        orderItem.setOrderId((int) orderId);
+                        orderItem.setProductId(cartItem.getProductId());
+                        orderItem.setQuantity(cartItem.getQuantity());
+                        db.orderItemDao().insert(orderItem);
+                    }
+
+                    // Очищаем корзину
+                    db.cartDao().deleteCartByUserId(currentUserId);
+
+                    // Синхронизируем с сервером
+                    SyncHelper syncHelper = new SyncHelper(this);
+                    syncHelper.syncOrders(currentUserId);
+                    syncHelper.syncCart(currentUserId);
+
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Заказ успешно оформлен", Toast.LENGTH_SHORT).show();
+                        startActivity(new Intent(this, ProfileActivity.class));
+                        finish();
+                    });
+                } catch (Exception e) {
+                    Log.e("CheckoutActivity", "Ошибка при создании заказа", e);
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Ошибка при создании заказа", Toast.LENGTH_SHORT).show();
+                    });
                 }
-                db.cartDao().deleteCartByUserId(currentUserId);
-
-                new com.example.online_clothing_store.sync.SyncHelper(this).syncOrders(currentUserId);
-
-                runOnUiThread(() -> {
-                    Toast.makeText(this, "Заказ успешно оформлен", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(this, ProfileActivity.class));
-                    finish();
-                });
             }).start();
         });
 

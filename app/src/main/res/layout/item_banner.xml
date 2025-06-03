@@ -10,4 +10,4 @@
         android:scaleType="centerCrop"
         android:contentDescription="Промо-баннер" />
 
-</FrameLayout> 
+</FrameLayout>
