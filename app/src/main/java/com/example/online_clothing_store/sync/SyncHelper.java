@@ -57,6 +57,23 @@ public class SyncHelper {
     // --- FAVORITES ---
     public void syncFavorites(int userId) {
         Log.d("SyncHelper", "Начало синхронизации избранного для пользователя " + userId);
+        
+        // Сначала отправляем локальные данные на сервер
+        Executors.newSingleThreadExecutor().execute(() -> {
+            List<Favorite> localFavorites = db.favoriteDao().getFavoritesByUserId(userId);
+            apiService.syncFavorites(localFavorites).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    Log.d("SyncHelper", "Локальные избранные товары отправлены на сервер");
+                }
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {
+                    Log.e("SyncHelper", "Ошибка отправки избранных товаров на сервер", t);
+                }
+            });
+        });
+
+        // Затем получаем данные с сервера
         apiService.getFavorites(userId).enqueue(new Callback<List<Favorite>>() {
             @Override
             public void onResponse(Call<List<Favorite>> call, Response<List<Favorite>> response) {

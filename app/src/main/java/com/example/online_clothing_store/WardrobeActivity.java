@@ -18,6 +18,8 @@ import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.Map;
+import java.util.HashMap;
 
 public class WardrobeActivity extends AppCompatActivity {
     private int currentUserId;
@@ -26,6 +28,7 @@ public class WardrobeActivity extends AppCompatActivity {
     private List<Product> bottoms = new ArrayList<>();
     private List<Product> shoes = new ArrayList<>();
     private int hatIndex = 0, topIndex = 0, bottomIndex = 0, shoesIndex = 0;
+    private Map<String, List<Product>> categoryProducts = new HashMap<>();
 
     private ImageView ivHat, ivShirt, ivPants, ivShoes;
     private ImageButton btnHatPrev, btnHatNext, btnShirtPrev, btnShirtNext, btnPantsPrev, btnPantsNext, btnShoesPrev, btnShoesNext;
@@ -56,6 +59,12 @@ public class WardrobeActivity extends AppCompatActivity {
 
     private void loadFavoritesAndSetup() {
         new Thread(() -> {
+            // Очищаем списки перед загрузкой
+            hats.clear();
+            tops.clear();
+            bottoms.clear();
+            shoes.clear();
+            
             List<Product> favoriteProducts = db.favoriteDao().getFavoriteProductsForUser(currentUserId);
             Log.d("WardrobeActivity", "Загружено избранных товаров: " + favoriteProducts.size());
             for (Product product : favoriteProducts) {
@@ -117,6 +126,12 @@ public class WardrobeActivity extends AppCompatActivity {
     }
 
     private void updateUI() {
+        Log.d("WardrobeActivity", "Обновление UI: " +
+            "шляпы=" + hats.size() + " (индекс=" + hatIndex + "), " +
+            "верх=" + tops.size() + " (индекс=" + topIndex + "), " +
+            "низ=" + bottoms.size() + " (индекс=" + bottomIndex + "), " +
+            "обувь=" + shoes.size() + " (индекс=" + shoesIndex + ")");
+
         showProductInCategory(ivHat, hats, hatIndex, R.drawable.placeholder);
         showProductInCategory(ivShirt, tops, topIndex, R.drawable.placeholder);
         showProductInCategory(ivPants, bottoms, bottomIndex, R.drawable.placeholder);
@@ -126,23 +141,34 @@ public class WardrobeActivity extends AppCompatActivity {
 
     private void showProductInCategory(ImageView iv, List<Product> list, int index, int placeholderRes) {
         if (list.isEmpty()) {
-            Log.d("WardrobeActivity", "Список товаров пуст, показываем placeholder");
+            Log.d("WardrobeActivity", "Список товаров пуст для категории " + iv.getId());
+            iv.setVisibility(View.GONE);
             iv.setImageResource(placeholderRes);
             return;
         }
+
+        // Нормализуем индекс
+        if (index < 0) index = 0;
+        if (index >= list.size()) index = list.size() - 1;
+
         Product product = list.get(index);
-        Log.d("WardrobeActivity", "Загрузка изображения для товара: id=" + product.getId() + 
+        Log.d("WardrobeActivity", "Показываем товар: id=" + product.getId() + 
             ", name=" + product.getName() + 
             ", imageUrl=" + product.getMainImageUrl());
+
+        iv.setVisibility(View.VISIBLE);
+        iv.setImageResource(0);
+
+        // Загружаем изображение
         if (product.getMainImageUrl() != null && !product.getMainImageUrl().isEmpty()) {
             Picasso.get()
-                    .load(product.getMainImageUrl())
-                    .placeholder(placeholderRes)
-                    .error(placeholderRes)
-                    .into(iv);
-            Log.d("WardrobeActivity", "Изображение загружается: " + product.getMainImageUrl());
+                .load(product.getMainImageUrl())
+                .placeholder(placeholderRes)
+                .error(placeholderRes)
+                .into(iv);
         } else {
-            Log.d("WardrobeActivity", "URL изображения пустой, показываем placeholder");
+            Log.w("WardrobeActivity", "URL изображения пустой для товара id=" + product.getId());
+            iv.setVisibility(View.GONE);
             iv.setImageResource(placeholderRes);
         }
     }
@@ -271,5 +297,30 @@ public class WardrobeActivity extends AppCompatActivity {
                 });
             }
         }).start();
+    }
+
+    private void loadProductsForCategory(String category) {
+        Log.d("WardrobeActivity", "Загрузка товаров для категории: " + category);
+        
+        // Получаем список товаров из базы данных
+        List<Product> products = db.favoriteDao().getFavoriteProductsForUser(currentUserId);
+        Log.d("WardrobeActivity", "Получено товаров из БД: " + products.size());
+        
+        // Выводим информацию о каждом товаре
+        for (Product product : products) {
+            Log.d("WardrobeActivity", String.format(
+                "Товар: id=%d, name=%s, categoryId=%d, imageUrl=%s",
+                product.getId(),
+                product.getName(),
+                product.getCategoryId(),
+                product.getMainImageUrl()
+            ));
+        }
+        
+        // Сохраняем список товаров
+        categoryProducts.put(category, products);
+        
+        // Обновляем отображение
+        updateUI();
     }
 }

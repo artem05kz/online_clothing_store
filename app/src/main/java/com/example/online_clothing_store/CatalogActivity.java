@@ -93,18 +93,9 @@ public class CatalogActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (!isGuestMode && currentUserId != -1) {
-            Executors.newSingleThreadExecutor().execute(() -> {
-                SyncHelper syncHelper = new SyncHelper(this);
-                syncHelper.syncFavorites(currentUserId);
-                syncHelper.syncCart(currentUserId);
-                syncHelper.syncOrders(currentUserId);
-                syncHelper.syncPromos();
-                syncHelper.syncProducts();
-            });
-        }
         loadProducts();
     }
+
     private void loadProducts() {
         executor.execute(() -> {
             try {
