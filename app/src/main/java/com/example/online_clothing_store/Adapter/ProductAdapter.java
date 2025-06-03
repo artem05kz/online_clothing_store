@@ -139,7 +139,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
             });
         });
 
-        // Обработка клика на кнопку "Добавить в корзину"
+        // Обработка клика на кнопку Добавить в корзину
         holder.ibAddToCart.setOnClickListener(v -> {
             if (isGuestMode || currentUserId == -1) {
                 Toast.makeText(context, "Для добавления в корзину требуется регистрация", Toast.LENGTH_SHORT).show();
@@ -147,7 +147,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
             }
 
             executor.execute(() -> {
-                // Проверяем, есть ли продукт в корзине
+                // Проверяем есть ли продукт в корзине
                 List<Cart> existingItems = db.cartDao().getCartItemsByUserId(currentUserId);
                 boolean productExists = false;
                 for (Cart item : existingItems) {
@@ -206,8 +206,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
             ibAddToCart = itemView.findViewById(R.id.ibAddToCart);
         }
     }
-
-    // Очистка пула потоков при уничтожении адаптера
+    // Очистка пула потоков
     public void shutdownExecutor() {
         executor.shutdown();
     }

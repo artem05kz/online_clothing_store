@@ -9,7 +9,7 @@ import androidx.room.PrimaryKey;
 @Entity(
         tableName = "orders",
         indices = {
-                @Index("user_id") // Индекс для user_id
+                @Index("user_id")
         },
         foreignKeys = @ForeignKey(
                 entity = User.class,
@@ -41,8 +41,6 @@ public class Order {
         this.address = address;
         this.status = "В обработке";
     }
-
-    // Геттеры и сеттеры
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 

@@ -28,11 +28,9 @@ public class ProductDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_product_detail);
 
-        // Получаем ID пользователя
         SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
         currentUserId = prefs.getInt("user_id", -1);
 
-        // Получаем данные о продукте
         Product product = (Product) getIntent().getSerializableExtra("product");
         if (product == null) {
             Toast.makeText(this, "Ошибка: продукт не найден", Toast.LENGTH_SHORT).show();
@@ -40,15 +38,12 @@ public class ProductDetailActivity extends AppCompatActivity {
             return;
         }
 
-        // Настройка ViewPager для изображений
         ViewPager2 viewPager = findViewById(R.id.productImagesPager);
         ImagePagerAdapter adapter = new ImagePagerAdapter();
         viewPager.setAdapter(adapter);
 
-        // Загрузка изображений в фоновом потоке
         loadProductImages(product, adapter, viewPager);
 
-        // Заполнение данных
         TextView title = findViewById(R.id.productTitle);
         TextView price = findViewById(R.id.productPrice);
         TextView rating = findViewById(R.id.productRating);
@@ -61,7 +56,6 @@ public class ProductDetailActivity extends AppCompatActivity {
         description.setText(product.getDescription());
         composition.setText(product.getComposition());
 
-        // Кнопка "Добавить в корзину"
         Button addToCart = findViewById(R.id.addToCartButton);
         addToCart.setOnClickListener(v -> {
             if (currentUserId == -1) {
@@ -72,20 +66,17 @@ public class ProductDetailActivity extends AppCompatActivity {
 
             new Thread(() -> {
                 AppDatabase db = AppDatabase.getInstance(ProductDetailActivity.this);
-                // Проверяем, есть ли уже этот продукт в корзине
                 List<Cart> existingItems = db.cartDao().getCartItemsByUserId(currentUserId);
                 boolean productExists = false;
                 for (Cart item : existingItems) {
                     if (item.getProductId() == product.getId()) {
-                        // Увеличиваем количество
                         item.setQuantity(item.getQuantity() + 1);
-                        db.cartDao().update(item); // Обновляем запись
+                        db.cartDao().update(item);
                         productExists = true;
                         break;
                     }
                 }
                 if (!productExists) {
-                    // Добавляем новую запись
                     Cart cartItem = new Cart();
                     cartItem.setUserId(currentUserId);
                     cartItem.setProductId(product.getId());
@@ -97,8 +88,6 @@ public class ProductDetailActivity extends AppCompatActivity {
                 });
             }).start();
         });
-
-        // Кнопка избранного
         ImageButton ibFavorite = findViewById(R.id.ibFavorite);
         updateFavoriteIcon(ibFavorite, currentUserId, product.getId());
         ibFavorite.setOnClickListener(v -> {
@@ -112,7 +101,6 @@ public class ProductDetailActivity extends AppCompatActivity {
                 FavoriteDao favoriteDao = db.favoriteDao();
                 Favorite existing = favoriteDao.getFavorite(currentUserId, product.getId());
                 if (existing == null) {
-                    // Добавить в избранное
                     Favorite fav = new Favorite();
                     fav.setUserId(currentUserId);
                     fav.setProductId(product.getId());
@@ -122,7 +110,6 @@ public class ProductDetailActivity extends AppCompatActivity {
                         Toast.makeText(this, "Добавлено в избранное", Toast.LENGTH_SHORT).show();
                     });
                 } else {
-                    // Удалить из избранного
                     favoriteDao.delete(existing);
                     runOnUiThread(() -> {
                         ibFavorite.setImageResource(R.drawable.ic_heart);
@@ -139,18 +126,15 @@ public class ProductDetailActivity extends AppCompatActivity {
         new Thread(() -> {
             AppDatabase db = AppDatabase.getInstance(this);
 
-            // 1. Основное изображение из продукта
             if (product.getMainImageUrl() != null && !product.getMainImageUrl().isEmpty()) {
                 adapter.addImage(product.getMainImageUrl());
             }
 
-            // 2. Дополнительные изображения из таблицы product_images
             List<ProductImage> additionalImages = db.productImageDao().getImagesForProduct(product.getId());
             for (ProductImage image : additionalImages) {
                 adapter.addImage(image.getImageUrl());
             }
 
-            // 3. Если изображений нет, добавляем заглушку
             runOnUiThread(() -> {
                 if (adapter.getItemCount() == 0) {
                     adapter.addImage(R.drawable.error);
@@ -164,12 +148,10 @@ public class ProductDetailActivity extends AppCompatActivity {
         CircleIndicator3 indicator = new CircleIndicator3(this);
         ViewGroup indicatorContainer = findViewById(R.id.indicatorContainer);
 
-        // Удаляем старый индикатор, если есть
         if (indicatorContainer.getChildCount() > 0) {
             indicatorContainer.removeAllViews();
         }
 
-        // Настраиваем новый индикатор
         indicatorContainer.addView(indicator);
         indicator.setViewPager(viewPager);
     }

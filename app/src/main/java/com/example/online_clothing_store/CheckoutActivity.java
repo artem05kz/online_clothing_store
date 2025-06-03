@@ -38,7 +38,6 @@ public class CheckoutActivity extends AppCompatActivity {
 
         db = AppDatabase.getInstance(this);
 
-        // Загрузка адреса из профиля
         new Thread(() -> {
             User user = db.userDao().getUserById(currentUserId);
             runOnUiThread(() -> {

@@ -184,22 +184,44 @@ public class SyncHelper {
 
     // --- PROMOS ---
     public void syncPromos() {
-        Executors.newSingleThreadExecutor().execute(() -> {
-            apiService.getPromos().enqueue(new Callback<List<Promo>>() {
-                @Override
-                public void onResponse(Call<List<Promo>> call, Response<List<Promo>> response) {
-                    if (response.isSuccessful() && response.body() != null) {
-                        Executors.newSingleThreadExecutor().execute(() -> {
-                            db.promoDao().deleteAll();
-                            db.promoDao().insertAll(response.body().toArray(new Promo[0]));
-                        });
+        Log.d("SyncHelper", "Начало синхронизации промо-акций");
+        apiService.getPromos().enqueue(new Callback<List<Promo>>() {
+            @Override
+            public void onResponse(Call<List<Promo>> call, Response<List<Promo>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Promo> promos = response.body();
+                    Log.d("SyncHelper", "Получено промо-акций с сервера: " + promos.size());
+                    
+                    // Устанавливаем isActive для всех промо-акций
+                    for (Promo promo : promos) {
+                        if (promo.isActive == null) {
+                            promo.isActive = true;
+                        }
+                        Log.d("SyncHelper", "Промо: id=" + promo.id + 
+                            ", code=" + promo.code + 
+                            ", imageUrl=" + promo.imageUrl + 
+                            ", isActive=" + promo.isActive);
                     }
+                    
+                    // Выполняем операции с БД в фоновом потоке
+                    Executors.newSingleThreadExecutor().execute(() -> {
+                        try {
+                            db.promoDao().deleteAll();
+                            db.promoDao().insertAll(promos.toArray(new Promo[0]));
+                            Log.d("SyncHelper", "Промо-акции синхронизированы с локальной БД");
+                        } catch (Exception e) {
+                            Log.e("SyncHelper", "Ошибка при работе с БД", e);
+                        }
+                    });
+                } else {
+                    Log.e("SyncHelper", "Ошибка получения промо-акций: " + response.code());
                 }
-                @Override
-                public void onFailure(Call<List<Promo>> call, Throwable t) {
-                    Log.e("Sync", "Не удалось получить промо-акции", t);
-                }
-            });
+            }
+
+            @Override
+            public void onFailure(Call<List<Promo>> call, Throwable t) {
+                Log.e("SyncHelper", "Ошибка синхронизации промо-акций", t);
+            }
         });
     }
 }

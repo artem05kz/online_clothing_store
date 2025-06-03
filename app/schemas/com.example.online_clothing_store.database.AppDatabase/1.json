@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "fb6e1c723bed54b7ad91930699d95f94",
+    "identityHash": "609819f9e3d574af26125bc7ef9936f6",
     "entities": [
       {
         "tableName": "users",
@@ -502,7 +502,7 @@
       },
       {
         "tableName": "promos",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `imageUrl` TEXT, `code` TEXT, `discountPercent` INTEGER, `description` TEXT, `isActive` INTEGER)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `imageUrl` TEXT, `code` TEXT, `discountPercent` INTEGER, `description` TEXT, `isActive` INTEGER DEFAULT 1)",
         "fields": [
           {
             "fieldPath": "id",
@@ -532,7 +532,8 @@
           {
             "fieldPath": "isActive",
             "columnName": "isActive",
-            "affinity": "INTEGER"
+            "affinity": "INTEGER",
+            "defaultValue": "1"
           }
         ],
         "primaryKey": {
@@ -545,7 +546,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'fb6e1c723bed54b7ad91930699d95f94')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '609819f9e3d574af26125bc7ef9936f6')"
     ]
   }
 }

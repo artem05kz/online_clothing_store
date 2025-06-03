@@ -12,19 +12,21 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager.widget.ViewPager;
+import com.example.online_clothing_store.Adapter.BannerPagerAdapter;
 import com.example.online_clothing_store.Adapter.ProductAdapter;
 import com.example.online_clothing_store.Adapter.RecommendationsAdapter;
 import com.example.online_clothing_store.database.AppDatabase;
 import com.example.online_clothing_store.database.dao.ProductDao;
+import com.example.online_clothing_store.database.dao.PromoDao;
 import com.example.online_clothing_store.database.entities.Product;
+import com.example.online_clothing_store.database.entities.Promo;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import android.widget.ImageView;
 import android.content.ClipData;
 import android.content.ClipboardManager;
-import com.example.online_clothing_store.database.dao.PromoDao;
-import com.example.online_clothing_store.database.entities.Promo;
 import com.squareup.picasso.Picasso;
 import com.example.online_clothing_store.sync.SyncHelper;
 
@@ -38,7 +40,8 @@ public class RecommendationsActivity extends AppCompatActivity {
     private ProductAdapter newArrivalsAdapter;
     private RecommendationsAdapter recommendedAdapter;
     private ExecutorService executor;
-    private ImageView promoBanner;
+    private ViewPager bannerPager;
+    private BannerPagerAdapter bannerAdapter;
     private Promo currentPromo;
 
     @Override
@@ -59,7 +62,7 @@ public class RecommendationsActivity extends AppCompatActivity {
         tvWelcome = findViewById(R.id.tvWelcome);
         newArrivalsList = findViewById(R.id.newArrivalsList);
         recommendationsList = findViewById(R.id.recommendationsList);
-        promoBanner = findViewById(R.id.promoBanner);
+        bannerPager = findViewById(R.id.bannerPager);
 
         // Настройка RecyclerView
         newArrivalsList.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
@@ -70,10 +73,45 @@ public class RecommendationsActivity extends AppCompatActivity {
 
         // Загрузка данных
         loadProducts();
-        loadPromoBanner();
+        loadPromoBanners();
 
         // Настройка кнопок навигации
         setupMenuButtons();
+    }
+
+    private void loadPromoBanners() {
+        executor.execute(() -> {
+            try {
+                AppDatabase db = AppDatabase.getInstance(this);
+                PromoDao promoDao = db.promoDao();
+                List<Promo> promos = promoDao.getAllPromos();
+                
+                Log.d("RecommendationsActivity", "Загружено промо-баннеров: " + promos.size());
+                for (Promo promo : promos) {
+                    Log.d("RecommendationsActivity", "Промо: id=" + promo.id + 
+                        ", code=" + promo.code + 
+                        ", imageUrl=" + promo.imageUrl + 
+                        ", isActive=" + promo.isActive);
+                }
+                
+                runOnUiThread(() -> {
+                    if (!promos.isEmpty()) {
+                        bannerAdapter = new BannerPagerAdapter(this, promos);
+                        bannerPager.setAdapter(bannerAdapter);
+                        bannerPager.setVisibility(View.VISIBLE);
+                        Log.d("RecommendationsActivity", "Баннеры установлены в ViewPager");
+                    } else {
+                        bannerPager.setVisibility(View.GONE);
+                        Log.d("RecommendationsActivity", "Нет активных промо-баннеров");
+                    }
+                });
+            } catch (Exception e) {
+                Log.e("RecommendationsActivity", "Ошибка загрузки промо-баннеров", e);
+                runOnUiThread(() -> {
+                    bannerPager.setVisibility(View.GONE);
+                });
+            }
+        });
     }
 
     private void loadProducts() {
@@ -92,35 +130,11 @@ public class RecommendationsActivity extends AppCompatActivity {
                     // Рекомендации
                     recommendedAdapter = new RecommendationsAdapter(this, recommendedProducts, isGuestMode, currentUserId);
                     recommendationsList.setAdapter(recommendedAdapter);
-
                 });
 
             } catch (Exception e) {
                 Log.e("RecommendationsActivity", "Ошибка загрузки продуктов", e);
                 runOnUiThread(() -> Toast.makeText(this, "Ошибка загрузки рекомендаций", Toast.LENGTH_SHORT).show());
-            }
-        });
-    }
-
-    private void loadPromoBanner() {
-        executor.execute(() -> {
-            AppDatabase db = AppDatabase.getInstance(this);
-            PromoDao promoDao = db.promoDao();
-            Promo promo = promoDao.getActivePromo();
-            if (promo != null && promo.imageUrl != null && !promo.imageUrl.isEmpty()) {
-                currentPromo = promo;
-                runOnUiThread(() -> {
-                    promoBanner.setVisibility(View.VISIBLE);
-                    Picasso.get().load(promo.imageUrl).into(promoBanner);
-                    promoBanner.setOnClickListener(v -> {
-                        ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-                        ClipData clip = ClipData.newPlainText("Промокод", promo.code);
-                        clipboard.setPrimaryClip(clip);
-                        Toast.makeText(this, "Промокод '" + promo.code + "' скопирован! Вставьте его в корзине.", Toast.LENGTH_SHORT).show();
-                    });
-                });
-            } else {
-                runOnUiThread(() -> promoBanner.setVisibility(View.GONE));
             }
         });
     }
@@ -138,11 +152,15 @@ public class RecommendationsActivity extends AppCompatActivity {
                 syncHelper.syncProducts();
             });
         }
+        loadProducts();
+        loadPromoBanners();
     }
+
     private void setupMenuButtons() {
         findViewById(R.id.imageButtonHome).setOnClickListener(v -> {
             // Уже на главной - обновляем страницу
             loadProducts();
+            loadPromoBanners();
         });
 
         findViewById(R.id.imageButtonHanger).setOnClickListener(v -> {

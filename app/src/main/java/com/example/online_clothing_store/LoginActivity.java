@@ -88,7 +88,6 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // Показываем прогресс
         ProgressDialog progressDialog = new ProgressDialog(this);
         progressDialog.setMessage("Проверка данных...");
         progressDialog.setCancelable(false);

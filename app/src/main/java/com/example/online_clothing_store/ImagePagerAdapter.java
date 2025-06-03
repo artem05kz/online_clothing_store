@@ -11,28 +11,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ImagePagerAdapter extends RecyclerView.Adapter<ImagePagerAdapter.ImageViewHolder> {
-    private final List<Object> images = new ArrayList<>(); // Может быть String (URL) или Integer (ресурс)
+    private final List<Object> images = new ArrayList<>();
 
-    // Добавляем изображение по URL
     public void addImage(String imageUrl) {
         images.add(imageUrl);
         notifyItemInserted(images.size() - 1);
     }
 
-    // Добавляем изображение из ресурсов
     public void addImage(int imageResId) {
         images.add(imageResId);
         notifyItemInserted(images.size() - 1);
     }
 
-    // Устанавливаем список URL
     public void setImages(List<String> urls) {
         images.clear();
         images.addAll(urls);
         notifyDataSetChanged();
     }
 
-    // Очищаем все изображения
     public void clearImages() {
         images.clear();
         notifyDataSetChanged();
@@ -51,23 +47,19 @@ public class ImagePagerAdapter extends RecyclerView.Adapter<ImagePagerAdapter.Im
         Object image = images.get(position);
 
         if (image instanceof String) {
-            // Загрузка сетевого изображения
             Picasso.get()
                     .load((String) image)
                     .placeholder(R.drawable.placeholder)
                     .error(R.drawable.error)
                     .into(holder.imageView);
         } else if (image instanceof Integer) {
-            // Установка ресурса
             holder.imageView.setImageResource((Integer) image);
         }
     }
-
     @Override
     public int getItemCount() {
         return images.size();
     }
-
     static class ImageViewHolder extends RecyclerView.ViewHolder {
         ImageView imageView;
 

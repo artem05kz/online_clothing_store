@@ -136,7 +136,7 @@ public class RecommendationsAdapter extends RecyclerView.Adapter<Recommendations
             });
         });
 
-        // Обработка клика на кнопку "Добавить в корзину"
+        // Обработка клика на кнопку Добавить в корзину
         holder.ibAddToCart.setOnClickListener(v -> {
             if (isGuestMode || currentUserId == -1) {
                 Toast.makeText(context, "Для добавления в корзину требуется регистрация", Toast.LENGTH_SHORT).show();

@@ -44,7 +44,6 @@ public class EditProfileActivity extends AppCompatActivity {
 
         db = AppDatabase.getInstance(this);
 
-        // Загрузка текущих данных пользователя
         new Thread(() -> {
             User user = db.userDao().getUserById(currentUserId);
             runOnUiThread(() -> {
@@ -64,14 +63,12 @@ public class EditProfileActivity extends AppCompatActivity {
                 return;
             }
 
-            // Обновляем локально
             Executors.newSingleThreadExecutor().execute(() -> {
                 User user = db.userDao().getUserById(currentUserId);
                 user.setName(newName);
                 user.setAddress(newAddress);
                 db.userDao().update(user);
 
-                // Синхронизация с сервером
                 runOnUiThread(() -> {
                     ApiService apiService = ApiClient.getClient().create(ApiService.class);
                     apiService.updateUser(user.getId(), user).enqueue(new Callback<User>() {

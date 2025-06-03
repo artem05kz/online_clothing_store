@@ -192,7 +192,7 @@ public class CartActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.imageButtonHome).setOnClickListener(v -> {
-            startActivity(new Intent(this, CartActivity.class));
+            startActivity(new Intent(this, RecommendationsActivity.class));
         });
 
         findViewById(R.id.imageButtonProfile).setOnClickListener(v -> {

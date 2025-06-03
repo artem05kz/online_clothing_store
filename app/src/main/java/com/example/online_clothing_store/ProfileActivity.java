@@ -52,10 +52,8 @@ public class ProfileActivity extends AppCompatActivity {
         ordersContainer = findViewById(R.id.ordersContainer);
         ibEdit = findViewById(R.id.ibEdit);
 
-        // Кнопка редактирования профиля
         ImageButton ibEdit = findViewById(R.id.ibEdit);
         ibEdit.setOnClickListener(v -> {
-            // Здесь будет переход на экран редактирования профиля
             Toast.makeText(ProfileActivity.this,
                     "Редактирование профиля",
                     Toast.LENGTH_SHORT).show();
@@ -143,7 +141,7 @@ public class ProfileActivity extends AppCompatActivity {
             AppDatabase db = AppDatabase.getInstance(this);
             List<Order> orders = db.orderDao().getOrdersByUserId(currentUserId);
             runOnUiThread(() -> {
-                ordersContainer.removeAllViews(); // Очищаем контейнер перед добавлением
+                ordersContainer.removeAllViews();
                 for (Order order : orders) {
                     View orderCard = LayoutInflater.from(this)
                             .inflate(R.layout.item_order, ordersContainer, false);
@@ -161,9 +159,7 @@ public class ProfileActivity extends AppCompatActivity {
         }).start();
     }
     private void setupMenuButtons() {
-        // Обработчики для нижнего меню
         findViewById(R.id.imageButtonProfile).setOnClickListener(v -> {
-            // Уже на главной - обновляем страницу
             loadUserData();
             loadFavorites();
             loadOrderHistory();
