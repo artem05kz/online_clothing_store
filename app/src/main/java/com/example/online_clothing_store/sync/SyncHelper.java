@@ -341,6 +341,7 @@ public class SyncHelper {
                             }
                             
                             // Сохраняем новые заказы
+                            List<Order> ordersToInsert = new ArrayList<>();
                             for (Order order : orders) {
                                 // Устанавливаем userId для заказа
                                 order.setUserId(userId);
@@ -368,18 +369,24 @@ public class SyncHelper {
                                 }
                                 
                                 if (allProductsExist) {
-                                    // Сохраняем заказ
-                                    long orderId = db.orderDao().insert(order);
-                                    
-                                    // Сохраняем элементы заказа
+                                    ordersToInsert.add(order);
+                                } else {
+                                    Log.e(TAG, "Пропуск заказа из-за отсутствующих продуктов");
+                                }
+                            }
+                            
+                            if (!ordersToInsert.isEmpty()) {
+                                // Сохраняем все заказы одним запросом
+                                db.orderDao().insertAll(ordersToInsert.toArray(new Order[0]));
+                                
+                                // Сохраняем элементы заказов
+                                for (Order order : ordersToInsert) {
                                     if (order.getOrderItems() != null) {
                                         for (OrderItem item : order.getOrderItems()) {
-                                            item.setOrderId((int)orderId);
+                                            item.setOrderId(order.getId());
                                             db.orderItemDao().insert(item);
                                         }
                                     }
-                                } else {
-                                    Log.e(TAG, "Пропуск заказа из-за отсутствующих продуктов");
                                 }
                             }
                             Log.d(TAG, "Заказы сохранены в локальную БД");
