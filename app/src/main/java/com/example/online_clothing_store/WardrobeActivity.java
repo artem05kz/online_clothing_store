@@ -41,6 +41,10 @@ public class WardrobeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wardrobe);
 
+        // Инициализация базы данных
+        db = AppDatabase.getInstance(this);
+
+        // Получение ID пользователя
         SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
         currentUserId = prefs.getInt("user_id", -1);
 
@@ -50,9 +54,30 @@ public class WardrobeActivity extends AppCompatActivity {
             return;
         }
 
-        db = AppDatabase.getInstance(this);
-        setupWardrobeUI();
+        // Инициализация UI элементов
+        ivHat = findViewById(R.id.ivHat);
+        ivShirt = findViewById(R.id.ivShirt);
+        ivPants = findViewById(R.id.ivPants);
+        ivShoes = findViewById(R.id.ivShoes);
+
+        btnHatPrev = findViewById(R.id.btnHatPrev);
+        btnHatNext = findViewById(R.id.btnHatNext);
+        btnShirtPrev = findViewById(R.id.btnShirtPrev);
+        btnShirtNext = findViewById(R.id.btnShirtNext);
+        btnPantsPrev = findViewById(R.id.btnPantsPrev);
+        btnPantsNext = findViewById(R.id.btnPantsNext);
+        btnShoesPrev = findViewById(R.id.btnShoesPrev);
+        btnShoesNext = findViewById(R.id.btnShoesNext);
+
+        tvTotalPrice = findViewById(R.id.tvTotalPrice);
+        btnGenerate = findViewById(R.id.btnGenerate);
+
+        // Установка обработчика нажатия на кнопку "Добавить все в корзину"
+        btnGenerate.setOnClickListener(v -> addAllToCart());
+
+        // Загрузка избранных товаров и настройка UI
         loadFavoritesAndSetup();
+        setupWardrobeUI();
         setupMenuButtons();
         setupImageClicks();
     }
@@ -114,15 +139,6 @@ public class WardrobeActivity extends AppCompatActivity {
         btnShoesNext = findViewById(R.id.btnShoesNext);
 
         tvTotalPrice = findViewById(R.id.tvTotalPrice);
-        btnGenerate = findViewById(R.id.btnGenerate);
-
-        btnGenerate.setOnClickListener(v -> {
-            hatIndex = (int) (Math.random() * hats.size());
-            topIndex = (int) (Math.random() * tops.size());
-            bottomIndex = (int) (Math.random() * bottoms.size());
-            shoesIndex = (int) (Math.random() * shoes.size());
-            updateUI();
-        });
     }
 
     private void updateUI() {
@@ -257,44 +273,97 @@ public class WardrobeActivity extends AppCompatActivity {
     }
 
     private void addAllToCart() {
-        if (hats.isEmpty() || tops.isEmpty() || bottoms.isEmpty() || shoes.isEmpty()) {
-            Toast.makeText(this, "Не все категории заполнены", Toast.LENGTH_SHORT).show();
+        if (currentUserId == -1) {
+            Toast.makeText(this, "Для добавления в корзину требуется авторизация", Toast.LENGTH_SHORT).show();
             return;
+        }
+
+        Log.d("WardrobeActivity", "Начало добавления в корзину. Текущие индексы: " +
+            "шляпы=" + hatIndex + " (размер=" + hats.size() + "), " +
+            "верх=" + topIndex + " (размер=" + tops.size() + "), " +
+            "низ=" + bottomIndex + " (размер=" + bottoms.size() + "), " +
+            "обувь=" + shoesIndex + " (размер=" + shoes.size() + ")");
+
+        // Проверяем валидность индексов
+        if (!hats.isEmpty() && (hatIndex < 0 || hatIndex >= hats.size())) {
+            Log.e("WardrobeActivity", "Некорректный индекс для шляп: " + hatIndex);
+            hatIndex = 0;
+        }
+        if (!tops.isEmpty() && (topIndex < 0 || topIndex >= tops.size())) {
+            Log.e("WardrobeActivity", "Некорректный индекс для верха: " + topIndex);
+            topIndex = 0;
+        }
+        if (!bottoms.isEmpty() && (bottomIndex < 0 || bottomIndex >= bottoms.size())) {
+            Log.e("WardrobeActivity", "Некорректный индекс для низа: " + bottomIndex);
+            bottomIndex = 0;
+        }
+        if (!shoes.isEmpty() && (shoesIndex < 0 || shoesIndex >= shoes.size())) {
+            Log.e("WardrobeActivity", "Некорректный индекс для обуви: " + shoesIndex);
+            shoesIndex = 0;
         }
 
         new Thread(() -> {
             try {
-                Cart hatCart = new Cart();
-                hatCart.setUserId(currentUserId);
-                hatCart.setProductId(hats.get(hatIndex).getId());
-                hatCart.setQuantity(1);
-                db.cartDao().insert(hatCart);
+                final boolean[] addedAny = {false};
+                
+                // Добавляем головной убор
+                if (!hats.isEmpty()) {
+                    Product hat = hats.get(hatIndex);
+                    Cart cartItem = new Cart();
+                    cartItem.setUserId(currentUserId);
+                    cartItem.setProductId(hat.getId());
+                    cartItem.setQuantity(1);
+                    db.cartDao().insert(cartItem);
+                    addedAny[0] = true;
+                    Log.d("WardrobeActivity", "Добавлена шапка в корзину: " + hat.getName() + " (id=" + hat.getId() + ")");
+                }
 
-                Cart topCart = new Cart();
-                topCart.setUserId(currentUserId);
-                topCart.setProductId(tops.get(topIndex).getId());
-                topCart.setQuantity(1);
-                db.cartDao().insert(topCart);
+                // Добавляем верхнюю одежду
+                if (!tops.isEmpty()) {
+                    Product top = tops.get(topIndex);
+                    Cart cartItem = new Cart();
+                    cartItem.setUserId(currentUserId);
+                    cartItem.setProductId(top.getId());
+                    cartItem.setQuantity(1);
+                    db.cartDao().insert(cartItem);
+                    addedAny[0] = true;
+                    Log.d("WardrobeActivity", "Добавлена верхняя одежда в корзину: " + top.getName() + " (id=" + top.getId() + ")");
+                }
 
-                Cart bottomCart = new Cart();
-                bottomCart.setUserId(currentUserId);
-                bottomCart.setProductId(bottoms.get(bottomIndex).getId());
-                bottomCart.setQuantity(1);
-                db.cartDao().insert(bottomCart);
+                // Добавляем нижнюю одежду
+                if (!bottoms.isEmpty()) {
+                    Product bottom = bottoms.get(bottomIndex);
+                    Cart cartItem = new Cart();
+                    cartItem.setUserId(currentUserId);
+                    cartItem.setProductId(bottom.getId());
+                    cartItem.setQuantity(1);
+                    db.cartDao().insert(cartItem);
+                    addedAny[0] = true;
+                    Log.d("WardrobeActivity", "Добавлена нижняя одежда в корзину: " + bottom.getName() + " (id=" + bottom.getId() + ")");
+                }
 
-                Cart shoesCart = new Cart();
-                shoesCart.setUserId(currentUserId);
-                shoesCart.setProductId(shoes.get(shoesIndex).getId());
-                shoesCart.setQuantity(1);
-                db.cartDao().insert(shoesCart);
+                // Добавляем обувь
+                if (!shoes.isEmpty()) {
+                    Product shoe = shoes.get(shoesIndex);
+                    Cart cartItem = new Cart();
+                    cartItem.setUserId(currentUserId);
+                    cartItem.setProductId(shoe.getId());
+                    cartItem.setQuantity(1);
+                    db.cartDao().insert(cartItem);
+                    addedAny[0] = true;
+                    Log.d("WardrobeActivity", "Добавлена обувь в корзину: " + shoe.getName() + " (id=" + shoe.getId() + ")");
+                }
 
                 runOnUiThread(() -> {
-                    Toast.makeText(this, "Все товары добавлены в корзину", Toast.LENGTH_SHORT).show();
+                    if (addedAny[0]) {
+                        Toast.makeText(this, "Выбранные товары добавлены в корзину", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Нет выбранных товаров для добавления в корзину", Toast.LENGTH_SHORT).show();
+                    }
                 });
             } catch (Exception e) {
-                runOnUiThread(() -> {
-                    Toast.makeText(this, "Ошибка при добавлении в корзину", Toast.LENGTH_SHORT).show();
-                });
+                Log.e("WardrobeActivity", "Ошибка при добавлении в корзину", e);
+                runOnUiThread(() -> Toast.makeText(this, "Ошибка при добавлении в корзину", Toast.LENGTH_SHORT).show());
             }
         }).start();
     }
