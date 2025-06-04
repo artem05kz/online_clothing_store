@@ -7,7 +7,7 @@ import android.content.Context;
 import java.util.List;
 
 @Database(entities = {User.class, Product.class, ProductImage.class, Category.class,
-        Favorite.class, Order.class, Cart.class, OrderItem.class, Promo.class}, version = 1)
+        Favorite.class, Order.class, Cart.class, OrderItem.class, Promo.class}, version = 2)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
     public abstract CartDao cartDao();
@@ -30,7 +30,9 @@ public abstract class AppDatabase extends RoomDatabase {
                                     context.getApplicationContext(),
                                     AppDatabase.class,
                                     DB_NAME
-                            ).build();
+                            )
+                            .fallbackToDestructiveMigration()
+                            .build();
                 }
             }
         }

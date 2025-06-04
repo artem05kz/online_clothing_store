@@ -32,17 +32,23 @@
             android:id="@+id/tvOrderDate"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_marginStart="8dp"
-            android:textColor="@color/black"
-            android:text="Проспект вернадского"/>
+            android:layout_weight="1"
+            android:text="Проспект вернадского"
+            android:textColor="@color/black" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Статус:"
-            android:textColor="@color/gray"
-            android:layout_marginStart="16dp"/>
+            android:textColor="@color/gray"/>
 
         <TextView
             android:id="@+id/tvOrderStatus"
