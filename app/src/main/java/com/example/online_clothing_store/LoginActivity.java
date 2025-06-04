@@ -13,7 +13,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.online_clothing_store.database.entities.User;
-import com.example.online_clothing_store.sync.SyncHelper;
+import com.example.online_clothing_store.sync.SyncManager;
 import com.example.online_clothing_store.utils.AuthHelper;
 import com.example.online_clothing_store.utils.PasswordHasher;
 import com.example.online_clothing_store.database.AppDatabase;
@@ -27,13 +27,25 @@ import java.util.concurrent.Executors;
 public class LoginActivity extends AppCompatActivity {
     private AppDatabase db;
     private TextInputEditText etEmail, etPassword;
+    private SyncManager syncManager;
+    private boolean isFirstLoad = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        syncManager = SyncManager.getInstance(this);
+        db = AppDatabase.getInstance(this);
+
+        // Выполняем синхронизацию при первой загрузке
+        if (isFirstLoad) {
+            isFirstLoad = false;
+            Executors.newSingleThreadExecutor().execute(() -> {
+                // Синхронизируем общие данные
+                syncManager.performFullSync(-1);
+            });
+        }
 
         new Thread(() -> {
-            new SyncHelper(this).syncUsers();
             User user = AuthHelper.tryAutoLogin(this);
 
             runOnUiThread(() -> {
@@ -42,20 +54,13 @@ public class LoginActivity extends AppCompatActivity {
                     prefs.edit().putInt("user_id", user.getId()).apply();
                     AuthHelper.saveCredentials(this, user.getEmail(), user.getPasswordHash());
 
-                    Executors.newSingleThreadExecutor().execute(() -> {
-                        SyncHelper syncHelper = new SyncHelper(this);
-                        syncHelper.syncFavorites(user.getId());
-                        syncHelper.syncCart(user.getId());
-                        syncHelper.syncOrders(user.getId());
-                        syncHelper.syncPromos();
-                        syncHelper.syncProducts();
-                    });
+                    // Синхронизируем пользовательские данные
+                    syncManager.performFullSync(user.getId());
 
                     startActivity(new Intent(this, RecommendationsActivity.class));
                     finish();
                 } else {
                     setContentView(R.layout.activity_login);
-                    db = AppDatabase.getInstance(this);
                     etEmail = findViewById(R.id.EmailAddress);
                     etPassword = findViewById(R.id.TextPassword);
 
@@ -83,6 +88,8 @@ public class LoginActivity extends AppCompatActivity {
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
+        Log.d("LoginActivity", "Попытка входа для email: " + email);
+
         if (!isEmailValid(email)) {
             showError(etEmail, "Неверный формат email");
             return;
@@ -95,55 +102,47 @@ public class LoginActivity extends AppCompatActivity {
 
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
+                Log.d("LoginActivity", "Поиск пользователя в базе данных");
                 User user = db.userDao().getUserByEmail(email);
+                Log.d("LoginActivity", "Результат поиска пользователя: " + (user != null ? "найден" : "не найден"));
+                
                 runOnUiThread(() -> {
                     progressDialog.dismiss();
                     if (user != null) {
                         try {
+                            Log.d("LoginActivity", "Проверка пароля");
                             if (PasswordHasher.check(password, user.getPasswordHash())) {
+                                Log.d("LoginActivity", "Пароль верный, сохранение данных пользователя");
                                 SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
                                 SharedPreferences.Editor editor = prefs.edit();
                                 editor.putInt("user_id", user.getId());
                                 editor.apply();
                                 AuthHelper.saveCredentials(this, email, password);
 
-                                // Выполняем полную синхронизацию только при входе
-                                Executors.newSingleThreadExecutor().execute(() -> {
-                                    try {
-                                        SyncHelper syncHelper = new SyncHelper(this);
-                                        syncHelper.syncFavorites(user.getId());
-                                        syncHelper.syncCart(user.getId());
-                                        syncHelper.syncOrders(user.getId());
-                                        syncHelper.syncPromos();
-                                        syncHelper.syncProducts();
-                                        
-                                        runOnUiThread(() -> {
-                                            startActivity(new Intent(this, RecommendationsActivity.class));
-                                            finish();
-                                        });
-                                    } catch (Exception e) {
-                                        Log.e("LoginActivity", "Ошибка синхронизации", e);
-                                        runOnUiThread(() -> {
-                                            Toast.makeText(this, "Ошибка синхронизации данных", Toast.LENGTH_SHORT).show();
-                                        });
-                                    }
-                                });
+                                // Синхронизируем пользовательские данные
+                                Log.d("LoginActivity", "Начало синхронизации данных пользователя");
+                                syncManager.performFullSync(user.getId());
+                                
+                                startActivity(new Intent(this, RecommendationsActivity.class));
+                                finish();
                             } else {
+                                Log.d("LoginActivity", "Неверный пароль");
                                 showError(etPassword, "Неверный пароль");
                             }
                         } catch (Exception e) {
+                            Log.e("LoginActivity", "Ошибка проверки пароля", e);
                             showError(etPassword, "Ошибка проверки пароля");
-                            Log.e("Login", "Password check error", e);
                         }
                     } else {
+                        Log.d("LoginActivity", "Пользователь не найден в базе данных");
                         showError(etEmail, "Пользователь не найден");
                     }
                 });
             } catch (Exception e) {
+                Log.e("LoginActivity", "Ошибка базы данных", e);
                 runOnUiThread(() -> {
                     progressDialog.dismiss();
                     Toast.makeText(this, "Ошибка базы данных: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                    Log.e("LoginActivity", "DB error", e);
                 });
             }
         });

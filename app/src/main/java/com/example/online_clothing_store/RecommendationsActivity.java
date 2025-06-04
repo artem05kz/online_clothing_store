@@ -99,7 +99,7 @@ public class RecommendationsActivity extends AppCompatActivity {
                         ", imageUrl=" + promo.imageUrl + 
                         ", isActive=" + promo.isActive);
                 }
-                
+
                 runOnUiThread(() -> {
                     if (!promos.isEmpty()) {
                         bannerAdapter = new BannerPagerAdapter(this, promos);
@@ -129,7 +129,7 @@ public class RecommendationsActivity extends AppCompatActivity {
         Log.d(TAG, "Начало загрузки продуктов");
         executor.execute(() -> {
             try {
-                AppDatabase db = AppDatabase.getInstance(this);
+            AppDatabase db = AppDatabase.getInstance(this);
                 List<Product> newArrivals = db.productDao().getNewArrivals();
                 List<Product> recommended = db.productDao().getRecommendedProducts();
                 
@@ -177,7 +177,7 @@ public class RecommendationsActivity extends AppCompatActivity {
         findViewById(R.id.imageButtonHome).setOnClickListener(v -> {
             // Уже на главной - обновляем страницу
             if (!isLoadingProducts) {
-                loadProducts();
+            loadProducts();
             }
             if (!isLoadingBanners) {
                 loadPromoBanners();

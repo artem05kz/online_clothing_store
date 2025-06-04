@@ -25,32 +25,36 @@ public class SyncHelper {
 
     // --- USERS ---
     public void syncUsers() {
-        Executors.newSingleThreadExecutor().execute(() -> {
-            List<User> localUsers = db.userDao().getAllUsers();
-            apiService.syncUsers(localUsers).enqueue(new Callback<Void>() {
-                @Override
-                public void onResponse(Call<Void> call, Response<Void> response) {
-                    Log.d("Sync", "Пользователи отправлены на сервер");
-                }
-                @Override
-                public void onFailure(Call<Void> call, Throwable t) {
-                    Log.e("Sync", "Не удалось синхронизировать пользователей", t);
-                }
-            });
-        });
+        Log.d(TAG, "Начало синхронизации пользователей");
+        
+        // Получаем пользователей с сервера
         apiService.getUsers().enqueue(new Callback<List<User>>() {
             @Override
             public void onResponse(Call<List<User>> call, Response<List<User>> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    List<User> users = response.body();
+                    Log.d(TAG, "Получено пользователей с сервера: " + users.size());
+                    
+                    // Сохраняем пользователей в локальную БД
                     Executors.newSingleThreadExecutor().execute(() -> {
-                        db.userDao().deleteAll();
-                        db.userDao().insertAll(response.body().toArray(new User[0]));
+                        try {
+                            db.userDao().deleteAll();
+                            for (User user : users) {
+                                db.userDao().insert(user);
+                            }
+                            Log.d(TAG, "Пользователи сохранены в локальную БД");
+                        } catch (Exception e) {
+                            Log.e(TAG, "Ошибка сохранения пользователей в БД", e);
+                        }
                     });
+                } else {
+                    Log.e(TAG, "Ошибка получения пользователей с сервера: " + response.code());
                 }
             }
+
             @Override
             public void onFailure(Call<List<User>> call, Throwable t) {
-                Log.e("Sync", "Не удалось получить пользователей", t);
+                Log.e(TAG, "Ошибка сети при получении пользователей", t);
             }
         });
     }
@@ -59,22 +63,7 @@ public class SyncHelper {
     public void syncFavorites(int userId) {
         Log.d("SyncHelper", "Начало синхронизации избранного для пользователя " + userId);
         
-        // Сначала отправляем локальные данные на сервер
-        Executors.newSingleThreadExecutor().execute(() -> {
-            List<Favorite> localFavorites = db.favoriteDao().getFavoritesByUserId(userId);
-            apiService.syncFavorites(localFavorites).enqueue(new Callback<Void>() {
-                @Override
-                public void onResponse(Call<Void> call, Response<Void> response) {
-                    Log.d("SyncHelper", "Локальные избранные товары отправлены на сервер");
-                }
-                @Override
-                public void onFailure(Call<Void> call, Throwable t) {
-                    Log.e("SyncHelper", "Ошибка отправки избранных товаров на сервер", t);
-                }
-            });
-        });
-
-        // Затем получаем данные с сервера
+        // Сначала получаем данные с сервера
         apiService.getFavorites(userId).enqueue(new Callback<List<Favorite>>() {
             @Override
             public void onResponse(Call<List<Favorite>> call, Response<List<Favorite>> response) {
@@ -100,72 +89,95 @@ public class SyncHelper {
                 Log.e("SyncHelper", "Ошибка получения избранного", t);
             }
         });
+
+        // Затем отправляем локальные данные на сервер
+        Executors.newSingleThreadExecutor().execute(() -> {
+            List<Favorite> localFavorites = db.favoriteDao().getFavoritesByUserId(userId);
+            apiService.syncFavorites(localFavorites).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    Log.d("SyncHelper", "Локальные избранные товары отправлены на сервер");
+                }
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {
+                    Log.e("SyncHelper", "Ошибка отправки избранных товаров на сервер", t);
+                }
+            });
+        });
     }
 
     // --- PRODUCTS ---
     public void syncProducts() {
-        Log.d("Sync", "Начало синхронизации продуктов");
+        Log.d(TAG, "Начало синхронизации продуктов");
         
-        // Сначала синхронизируем категории
-        apiService.getCategories().enqueue(new Callback<List<Category>>() {
-            @Override
-            public void onResponse(Call<List<Category>> call, Response<List<Category>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    List<Category> categories = response.body();
-                    Log.d("Sync", "Получено категорий с сервера: " + categories.size());
-                    
-                    Executors.newSingleThreadExecutor().execute(() -> {
-                        try {
-                            db.categoryDao().deleteAll();
-                            db.categoryDao().insertAll(categories.toArray(new Category[0]));
-                            Log.d("Sync", "Категории сохранены в локальную БД");
-                            
-                            // После сохранения категорий синхронизируем продукты
-                            syncProductsAfterCategories();
-                        } catch (Exception e) {
-                            Log.e("Sync", "Ошибка сохранения категорий", e);
-                        }
-                    });
-                }
+        // Проверяем наличие категорий в БД
+        new Thread(() -> {
+            int categoryCount = db.categoryDao().getCategoryCount();
+            if (categoryCount == 0) {
+                // Если категорий нет, синхронизируем их
+                syncCategories();
+            } else {
+                // Если категории есть, сразу получаем продукты
+                syncProductsAfterCategories();
             }
-            @Override
-            public void onFailure(Call<List<Category>> call, Throwable t) {
-                Log.e("Sync", "Ошибка получения категорий", t);
-            }
-        });
+        }).start();
     }
 
     private void syncProductsAfterCategories() {
-        Log.d("Sync", "Продукты отправлены на сервер");
-        apiService.getProductsWithCategories().enqueue(new Callback<List<Product>>() {
+        apiService.getProducts().enqueue(new Callback<List<Product>>() {
             @Override
             public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     List<Product> products = response.body();
-                    Log.d("Sync", "Получено продуктов с сервера: " + products.size());
-                
-                    for (Product product : products) {
-                        if (product.getCategoryId() == null) {
-                            Log.w("Sync", "Продукт без категории: id=" + product.getId() + 
-                                ", name=" + product.getName());
-                        }
-                    }
-
-                    Executors.newSingleThreadExecutor().execute(() -> {
+                    Log.d(TAG, "Получено продуктов с сервера: " + products.size());
+                    
+                    // Сохраняем продукты в локальную БД
+                    new Thread(() -> {
                         try {
                             db.productDao().deleteAll();
                             db.productDao().insertAll(products.toArray(new Product[0]));
-                            Log.d("Sync", "Продукты сохранены в локальную БД");
+                            Log.d(TAG, "Продукты сохранены в локальную БД");
                         } catch (Exception e) {
-                            Log.e("Sync", "Ошибка сохранения продуктов", e);
+                            Log.e(TAG, "Ошибка сохранения продуктов", e);
                         }
-                    });
+                    }).start();
                 }
             }
 
             @Override
             public void onFailure(Call<List<Product>> call, Throwable t) {
-                Log.e("Sync", "Ошибка получения продуктов", t);
+                Log.e(TAG, "Ошибка получения продуктов", t);
+            }
+        });
+    }
+
+    public void syncCategories() {
+        Log.d(TAG, "Начало синхронизации категорий");
+        apiService.getCategories().enqueue(new Callback<List<Category>>() {
+            @Override
+            public void onResponse(Call<List<Category>> call, Response<List<Category>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Category> categories = response.body();
+                    Log.d(TAG, "Получено категорий с сервера: " + categories.size());
+                    
+                    // Сохраняем категории в локальную БД
+                    new Thread(() -> {
+                        try {
+                            // Сначала удаляем все существующие категории
+                            db.categoryDao().deleteAll();
+                            // Затем вставляем новые
+                            db.categoryDao().insertAll(categories.toArray(new Category[0]));
+                            Log.d(TAG, "Категории сохранены в локальную БД");
+                        } catch (Exception e) {
+                            Log.e(TAG, "Ошибка сохранения категорий", e);
+                        }
+                    }).start();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Category>> call, Throwable t) {
+                Log.e(TAG, "Ошибка получения категорий", t);
             }
         });
     }
@@ -173,6 +185,8 @@ public class SyncHelper {
     // --- CART ---
     public void syncCart(int userId) {
         Log.d("SyncHelper", "Начало синхронизации корзины для пользователя " + userId);
+        
+        // Сначала получаем данные с сервера
         apiService.getCart(userId).enqueue(new Callback<List<Cart>>() {
             @Override
             public void onResponse(Call<List<Cart>> call, Response<List<Cart>> response) {
@@ -198,53 +212,74 @@ public class SyncHelper {
                 Log.e("SyncHelper", "Ошибка получения корзины", t);
             }
         });
+
+        // Затем отправляем локальные данные на сервер
+        Executors.newSingleThreadExecutor().execute(() -> {
+            List<Cart> localCartItems = db.cartDao().getCartItemsByUserId(userId);
+            apiService.syncCart(localCartItems).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    Log.d("SyncHelper", "Локальные товары корзины отправлены на сервер");
+                }
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {
+                    Log.e("SyncHelper", "Ошибка отправки товаров корзины на сервер", t);
+                }
+            });
+        });
     }
 
     // --- ORDERS ---
     public void syncOrders(int userId) {
         Log.d(TAG, "Начало синхронизации заказов для пользователя " + userId);
         
-        // Получаем локальные заказы
-        List<Order> localOrders = db.orderDao().getOrdersByUserId(userId);
-        Log.d(TAG, "Локальные заказы для синхронизации: " + localOrders.size());
-        
-        // Отправляем на сервер
-        apiService.syncOrders(localOrders).enqueue(new Callback<Void>() {
+        // Сначала получаем данные с сервера
+        apiService.getOrders(userId).enqueue(new Callback<List<Order>>() {
             @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
-                if (response.isSuccessful()) {
-                    Log.d(TAG, "Заказы успешно отправлены на сервер");
-                    // Получаем обновленные данные с сервера
-                    apiService.getOrders(userId).enqueue(new Callback<List<Order>>() {
-                        @Override
-                        public void onResponse(Call<List<Order>> call, Response<List<Order>> response) {
-                            if (response.isSuccessful() && response.body() != null) {
-                                List<Order> serverOrders = response.body();
-                                Log.d(TAG, "Получено заказов с сервера: " + serverOrders.size());
-                                
-                                // Сохраняем в локальную БД
-                                db.orderDao().deleteByUserId(userId);
-                                for (Order order : serverOrders) {
-                                    order.setUserId(userId); // Устанавливаем userId для локальной БД
-                                }
+            public void onResponse(Call<List<Order>> call, Response<List<Order>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Order> serverOrders = response.body();
+                    Log.d(TAG, "Получено заказов с сервера: " + serverOrders.size());
+                    
+                    Executors.newSingleThreadExecutor().execute(() -> {
+                        try {
+                            db.orderDao().deleteByUserId(userId);
+                            if (!serverOrders.isEmpty()) {
                                 db.orderDao().insertAll(serverOrders.toArray(new Order[0]));
-                                Log.d(TAG, "Заказы сохранены в локальную БД");
-                            } else {
-                                Log.e(TAG, "Ошибка получения заказов с сервера: " + response.code());
                             }
-                        }
-                        @Override
-                        public void onFailure(Call<List<Order>> call, Throwable t) {
-                            Log.e(TAG, "Ошибка получения заказов с сервера", t);
+                            Log.d(TAG, "Заказы сохранены в локальную БД");
+                        } catch (Exception e) {
+                            Log.e(TAG, "Ошибка сохранения заказов", e);
                         }
                     });
-                } else {
-                    Log.e(TAG, "Ошибка отправки заказов на сервер: " + response.code());
                 }
             }
             @Override
-            public void onFailure(Call<Void> call, Throwable t) {
-                Log.e(TAG, "Ошибка отправки заказов на сервер", t);
+            public void onFailure(Call<List<Order>> call, Throwable t) {
+                Log.e(TAG, "Ошибка получения заказов", t);
+            }
+        });
+
+        // Затем отправляем локальные данные на сервер
+        Executors.newSingleThreadExecutor().execute(() -> {
+            List<Order> localOrders = db.orderDao().getOrdersByUserId(userId);
+            Log.d(TAG, "Локальные заказы для синхронизации: " + localOrders.size());
+            
+            if (!localOrders.isEmpty()) {
+                apiService.syncOrders(localOrders).enqueue(new Callback<Void>() {
+                    @Override
+                    public void onResponse(Call<Void> call, Response<Void> response) {
+                        if (response.isSuccessful()) {
+                            Log.d(TAG, "Заказы успешно отправлены на сервер");
+                        } else {
+                            Log.e(TAG, "Ошибка отправки заказов на сервер: " + response.code());
+                        }
+                    }
+                    @Override
+                    public void onFailure(Call<Void> call, Throwable t) {
+                        Log.e(TAG, "Ошибка отправки заказов на сервер", t);
+                    }
+                });
             }
         });
     }
@@ -252,10 +287,10 @@ public class SyncHelper {
     // --- PROMOS ---
     public void syncPromos() {
         Log.d("SyncHelper", "Начало синхронизации промо-акций");
-        apiService.getPromos().enqueue(new Callback<List<Promo>>() {
-            @Override
-            public void onResponse(Call<List<Promo>> call, Response<List<Promo>> response) {
-                if (response.isSuccessful() && response.body() != null) {
+            apiService.getPromos().enqueue(new Callback<List<Promo>>() {
+                @Override
+                public void onResponse(Call<List<Promo>> call, Response<List<Promo>> response) {
+                    if (response.isSuccessful() && response.body() != null) {
                     List<Promo> promos = response.body();
                     Log.d("SyncHelper", "Получено промо-акций с сервера: " + promos.size());
                     
@@ -271,54 +306,23 @@ public class SyncHelper {
                     }
                     
                     // Выполняем операции с БД в фоновом потоке
-                    Executors.newSingleThreadExecutor().execute(() -> {
+                        Executors.newSingleThreadExecutor().execute(() -> {
                         try {
                             db.promoDao().deleteAll();
                             db.promoDao().insertAll(promos.toArray(new Promo[0]));
                             Log.d("SyncHelper", "Промо-акции синхронизированы с локальной БД");
                         } catch (Exception e) {
                             Log.e("SyncHelper", "Ошибка при работе с БД", e);
-                        }
+                    }
                     });
                 } else {
                     Log.e("SyncHelper", "Ошибка получения промо-акций: " + response.code());
                 }
             }
 
-            @Override
-            public void onFailure(Call<List<Promo>> call, Throwable t) {
+                @Override
+                public void onFailure(Call<List<Promo>> call, Throwable t) {
                 Log.e("SyncHelper", "Ошибка синхронизации промо-акций", t);
-            }
-        });
-    }
-
-    // --- CATEGORIES ---
-    public void syncCategories() {
-        Log.d("SyncHelper", "Начало синхронизации категорий");
-        apiService.getCategories().enqueue(new Callback<List<Category>>() {
-            @Override
-            public void onResponse(Call<List<Category>> call, Response<List<Category>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    List<Category> categories = response.body();
-                    Log.d("SyncHelper", "Получено категорий с сервера: " + categories.size());
-                    
-                    Executors.newSingleThreadExecutor().execute(() -> {
-                        try {
-                            db.productDao().deleteAll();
-                            db.categoryDao().deleteAll();
-                            db.categoryDao().insertAll(categories.toArray(new Category[0]));
-                            Log.d("SyncHelper", "Категории сохранены в локальную БД");
-                        } catch (Exception e) {
-                            Log.e("SyncHelper", "Ошибка сохранения категорий", e);
-                        }
-                    });
-                } else {
-                    Log.e("SyncHelper", "Ошибка получения категорий: " + response.code());
-                }
-            }
-            @Override
-            public void onFailure(Call<List<Category>> call, Throwable t) {
-                Log.e("SyncHelper", "Ошибка получения категорий", t);
             }
         });
     }

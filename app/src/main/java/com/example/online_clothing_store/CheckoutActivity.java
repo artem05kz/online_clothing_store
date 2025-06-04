@@ -63,27 +63,27 @@ public class CheckoutActivity extends AppCompatActivity {
                     Log.d(TAG, "Начало создания заказа для пользователя " + currentUserId);
                     
                     // Создаем заказ
-                    Order order = new Order(currentUserId, address);
-                    order.setId(null);
-                    long orderId = db.orderDao().insert(order);
+                Order order = new Order(currentUserId, address);
+                order.setId(null);
+                long orderId = db.orderDao().insert(order);
                     Log.d(TAG, "Заказ создан с ID: " + orderId);
 
                     // Получаем товары из корзины
-                    List<Cart> cartItems = db.cartDao().getCartItemsByUserId(currentUserId);
+                List<Cart> cartItems = db.cartDao().getCartItemsByUserId(currentUserId);
                     Log.d(TAG, "Получено товаров из корзины: " + cartItems.size());
 
                     // Создаем элементы заказа
-                    for (Cart cartItem : cartItems) {
-                        OrderItem orderItem = new OrderItem();
-                        orderItem.setOrderId((int) orderId);
-                        orderItem.setProductId(cartItem.getProductId());
-                        orderItem.setQuantity(cartItem.getQuantity());
-                        db.orderItemDao().insert(orderItem);
-                    }
+                for (Cart cartItem : cartItems) {
+                    OrderItem orderItem = new OrderItem();
+                    orderItem.setOrderId((int) orderId);
+                    orderItem.setProductId(cartItem.getProductId());
+                    orderItem.setQuantity(cartItem.getQuantity());
+                    db.orderItemDao().insert(orderItem);
+                }
                     Log.d(TAG, "Элементы заказа созданы");
 
                     // Очищаем корзину
-                    db.cartDao().deleteCartByUserId(currentUserId);
+                db.cartDao().deleteCartByUserId(currentUserId);
                     Log.d(TAG, "Корзина очищена");
 
                     // Синхронизируем с сервером
@@ -106,13 +106,13 @@ public class CheckoutActivity extends AppCompatActivity {
                     syncLatch.await();
                     Log.d(TAG, "Синхронизация завершена");
 
-                    runOnUiThread(() -> {
-                        Toast.makeText(this, "Заказ успешно оформлен", Toast.LENGTH_SHORT).show();
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Заказ успешно оформлен", Toast.LENGTH_SHORT).show();
                         Intent intent = new Intent(this, ProfileActivity.class);
                         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                         startActivity(intent);
-                        finish();
-                    });
+                    finish();
+                });
                 } catch (Exception e) {
                     Log.e(TAG, "Ошибка при создании заказа", e);
                     runOnUiThread(() -> {

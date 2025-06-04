@@ -111,8 +111,8 @@ public class WardrobeActivity extends AppCompatActivity {
                         case 4: // Обувь
                             shoes.add(product);
                             break;
-                    }
                 }
+            }
             }
             Log.d("WardrobeActivity", "Распределение по категориям: " +
                 "шляпы=" + hats.size() + 
@@ -185,7 +185,7 @@ public class WardrobeActivity extends AppCompatActivity {
         } else {
             Log.w("WardrobeActivity", "URL изображения пустой для товара id=" + product.getId());
             iv.setVisibility(View.GONE);
-            iv.setImageResource(placeholderRes);
+                iv.setImageResource(placeholderRes);
         }
     }
 
@@ -352,7 +352,7 @@ public class WardrobeActivity extends AppCompatActivity {
                     db.cartDao().insert(cartItem);
                     addedAny[0] = true;
                     Log.d("WardrobeActivity", "Добавлена обувь в корзину: " + shoe.getName() + " (id=" + shoe.getId() + ")");
-                }
+            }
 
                 runOnUiThread(() -> {
                     if (addedAny[0]) {

@@ -41,10 +41,10 @@ public interface ApiService {
     Call<Void> syncCart(@Body List<Cart> cartItems);
 
     // --- ORDERS ---
-    @GET
-    ("orders") Call<List<Order>> getOrders(@Query("user_id") int userId);
+    @GET("orders")
+    Call<List<Order>> getOrders(@Query("user_id") int userId);
 
-    @POST("sync/orders")
+    @POST("orders/sync")
     Call<Void> syncOrders(@Body List<Order> orders);
 
     // --- PROMOS ---

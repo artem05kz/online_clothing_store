@@ -21,7 +21,7 @@ import com.example.online_clothing_store.database.entities.Favorite;
 import com.example.online_clothing_store.database.entities.Order;
 import com.example.online_clothing_store.database.entities.Product;
 import com.example.online_clothing_store.database.entities.User;
-import com.example.online_clothing_store.sync.SyncHelper;
+import com.example.online_clothing_store.sync.SyncManager;
 import com.squareup.picasso.Picasso;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -32,35 +32,41 @@ public class ProfileActivity extends AppCompatActivity {
     private LinearLayout favoritesContainer, ordersContainer;
     private int currentUserId;
     private ImageButton ibEdit;
-    private SyncHelper syncHelper;
+    private SyncManager syncManager;
     private AppDatabase db;
     private TextView tvFavoritesCount, tvCartCount, tvOrdersCount;
+    private UserDao userDao;
+    private FavoriteDao favoriteDao;
+    private OrderDao orderDao;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
+        db = AppDatabase.getInstance(this);
+        userDao = db.userDao();
+        favoriteDao = db.favoriteDao();
+        orderDao = db.orderDao();
+        syncManager = SyncManager.getInstance(this);
+
+        SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
+        currentUserId = prefs.getInt("user_id", -1);
+
+        if (currentUserId == -1) {
+            Toast.makeText(this, "Ошибка: пользователь не найден", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
         initializeViews();
         setupClickListeners();
         loadUserData();
         loadFavorites();
         loadOrderHistory();
-
-        syncHelper = new SyncHelper(this);
     }
 
     private void initializeViews() {
-        SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
-        currentUserId = prefs.getInt("user_id", -1);
-
-        if (currentUserId == -1) {
-            Toast.makeText(this, "Пользователь не авторизован", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-
-        db = AppDatabase.getInstance(this);
         tvUserName = findViewById(R.id.tvUserName);
         tvAddress = findViewById(R.id.tvAddress);
         favoritesContainer = findViewById(R.id.favoritesContainer);
@@ -85,15 +91,9 @@ public class ProfileActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        syncUserData();
         loadUserData();
         loadOrderHistory();
         loadFavorites();
-    }
-
-    private void syncUserData() {
-        Log.d(TAG, "Загрузка данных из локальной БД");
-        loadUserData();
     }
 
     private void loadUserData() {
@@ -107,10 +107,10 @@ public class ProfileActivity extends AppCompatActivity {
 
         new Thread(() -> {
             try {
-                User user = db.userDao().getUserById(userId);
-                List<Favorite> favorites = db.favoriteDao().getFavoritesByUserId(userId);
+                User user = userDao.getUserById(userId);
+                List<Favorite> favorites = favoriteDao.getFavoritesByUserId(userId);
                 List<Cart> cartItems = db.cartDao().getCartItemsByUserId(userId);
-                List<Order> orders = db.orderDao().getOrdersByUserId(userId);
+                List<Order> orders = orderDao.getOrdersByUserId(userId);
 
                 runOnUiThread(() -> {
                     if (user != null) {
@@ -140,8 +140,6 @@ public class ProfileActivity extends AppCompatActivity {
 
         new Thread(() -> {
             try {
-                AppDatabase db = AppDatabase.getInstance(this);
-                FavoriteDao favoriteDao = db.favoriteDao();
                 List<Product> favoriteProducts = favoriteDao.getFavoriteProductsForUser(currentUserId);
 
                 runOnUiThread(() -> {
@@ -196,8 +194,7 @@ public class ProfileActivity extends AppCompatActivity {
         Log.d(TAG, "Начало загрузки истории заказов для пользователя " + currentUserId);
         new Thread(() -> {
             try {
-                AppDatabase db = AppDatabase.getInstance(this);
-                List<Order> orders = db.orderDao().getOrdersByUserId(currentUserId);
+                List<Order> orders = orderDao.getOrdersByUserId(currentUserId);
                 Log.d(TAG, "Получено заказов из БД: " + orders.size());
                 
                 runOnUiThread(() -> {
