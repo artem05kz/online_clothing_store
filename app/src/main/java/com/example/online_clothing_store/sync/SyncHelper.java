@@ -111,7 +111,7 @@ public class SyncHelper {
         Log.d(TAG, "Начало синхронизации продуктов");
         
         // Проверяем наличие категорий в БД
-        new Thread(() -> {
+        Executors.newSingleThreadExecutor().execute(() -> {
             int categoryCount = db.categoryDao().getCategoryCount();
             if (categoryCount == 0) {
                 // Если категорий нет, синхронизируем их
@@ -120,7 +120,7 @@ public class SyncHelper {
                 // Если категории есть, сразу получаем продукты
                 syncProductsAfterCategories();
             }
-        }).start();
+        });
     }
 
     private void syncProductsAfterCategories() {
@@ -132,7 +132,7 @@ public class SyncHelper {
                     Log.d(TAG, "Получено продуктов с сервера: " + products.size());
                     
                     // Сохраняем продукты в локальную БД
-                    new Thread(() -> {
+                    Executors.newSingleThreadExecutor().execute(() -> {
                         try {
                             db.productDao().deleteAll();
                             db.productDao().insertAll(products.toArray(new Product[0]));
@@ -140,7 +140,7 @@ public class SyncHelper {
                         } catch (Exception e) {
                             Log.e(TAG, "Ошибка сохранения продуктов", e);
                         }
-                    }).start();
+                    });
                 }
             }
 
@@ -161,17 +161,19 @@ public class SyncHelper {
                     Log.d(TAG, "Получено категорий с сервера: " + categories.size());
                     
                     // Сохраняем категории в локальную БД
-                    new Thread(() -> {
+                    Executors.newSingleThreadExecutor().execute(() -> {
                         try {
-                            // Сначала удаляем все существующие категории
+                            // Сначала удаляем все продукты
+                            db.productDao().deleteAll();
+                            // Затем удаляем все категории
                             db.categoryDao().deleteAll();
-                            // Затем вставляем новые
+                            // Вставляем новые категории
                             db.categoryDao().insertAll(categories.toArray(new Category[0]));
                             Log.d(TAG, "Категории сохранены в локальную БД");
                         } catch (Exception e) {
                             Log.e(TAG, "Ошибка сохранения категорий", e);
                         }
-                    }).start();
+                    });
                 }
             }
 
