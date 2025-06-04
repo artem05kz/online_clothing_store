@@ -14,4 +14,7 @@ public interface OrderItemDao {
 
     @Delete
     void delete(OrderItem orderItem);
+
+    @Query("DELETE FROM order_items")
+    void deleteAll();
 }

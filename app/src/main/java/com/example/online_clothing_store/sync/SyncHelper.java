@@ -240,7 +240,6 @@ public class SyncHelper {
                     for (Order order : localOrders) {
                         // Создаем новый объект Order для отправки
                         Order orderToSend = new Order();
-                        orderToSend.setId(order.getId());
                         
                         // Получаем объект User
                         User user = db.userDao().getUserById(order.getUserId());
@@ -291,16 +290,20 @@ public class SyncHelper {
                     }
 
                     if (!ordersToSend.isEmpty()) {
-                        // Отправляем заказы на сервер
-                        Response<Void> response = apiService.syncOrders(ordersToSend).execute();
-                        if (response.isSuccessful()) {
-                            Log.d(TAG, "Заказы успешно отправлены на сервер");
-                        } else {
-                            Log.e(TAG, "Ошибка отправки заказов на сервер: " + response.code());
-                            if (response.errorBody() != null) {
-                                String errorBody = response.errorBody().string();
-                                Log.e(TAG, "Тело ошибки: " + errorBody);
+                        try {
+                            // Отправляем заказы на сервер
+                            Response<Void> response = apiService.syncOrders(ordersToSend).execute();
+                            if (response.isSuccessful()) {
+                                Log.d(TAG, "Заказы успешно отправлены на сервер");
+                            } else {
+                                Log.e(TAG, "Ошибка отправки заказов на сервер: " + response.code());
+                                if (response.errorBody() != null) {
+                                    String errorBody = response.errorBody().string();
+                                    Log.e(TAG, "Тело ошибки: " + errorBody);
+                                }
                             }
+                        } catch (Exception e) {
+                            Log.e(TAG, "Ошибка при отправке заказов на сервер", e);
                         }
                     } else {
                         Log.e(TAG, "Нет заказов для отправки после проверки полей");
@@ -320,20 +323,70 @@ public class SyncHelper {
             @Override
             public void onResponse(Call<List<Order>> call, Response<List<Order>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    List<Order> serverOrders = response.body();
-                    Log.d(TAG, "Получено заказов с сервера: " + serverOrders.size());
+                    List<Order> orders = response.body();
+                    Log.d(TAG, "Получено заказов с сервера: " + orders.size());
                     
-                    Executors.newSingleThreadExecutor().execute(() -> {
+                    // Сохраняем заказы в локальную БД
+                    new Thread(() -> {
                         try {
+                            // Сначала удаляем старые заказы и их элементы
+                            db.orderItemDao().deleteAll();
                             db.orderDao().deleteByUserId(userId);
-                            if (!serverOrders.isEmpty()) {
-                                db.orderDao().insertAll(serverOrders.toArray(new Order[0]));
+                            
+                            // Проверяем существование пользователя
+                            User user = db.userDao().getUserById(userId);
+                            if (user == null) {
+                                Log.e(TAG, "Пользователь не найден: " + userId);
+                                return;
+                            }
+                            
+                            // Сохраняем новые заказы
+                            for (Order order : orders) {
+                                // Устанавливаем userId для заказа
+                                order.setUserId(userId);
+                                
+                                // Устанавливаем значения по умолчанию для отсутствующих полей
+                                if (order.getStatus() == null || order.getStatus().isEmpty()) {
+                                    order.setStatus("В обработке");
+                                }
+                                if (order.getOrderDate() == null || order.getOrderDate().isEmpty()) {
+                                    order.setOrderDate(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+                                        .format(new java.util.Date()));
+                                }
+                                
+                                // Проверяем все продукты в заказе
+                                boolean allProductsExist = true;
+                                if (order.getOrderItems() != null) {
+                                    for (OrderItem item : order.getOrderItems()) {
+                                        Product product = db.productDao().getProductById(item.getProductId());
+                                        if (product == null) {
+                                            Log.e(TAG, "Продукт не найден: " + item.getProductId());
+                                            allProductsExist = false;
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                if (allProductsExist) {
+                                    // Сохраняем заказ
+                                    long orderId = db.orderDao().insert(order);
+                                    
+                                    // Сохраняем элементы заказа
+                                    if (order.getOrderItems() != null) {
+                                        for (OrderItem item : order.getOrderItems()) {
+                                            item.setOrderId((int)orderId);
+                                            db.orderItemDao().insert(item);
+                                        }
+                                    }
+                                } else {
+                                    Log.e(TAG, "Пропуск заказа из-за отсутствующих продуктов");
+                                }
                             }
                             Log.d(TAG, "Заказы сохранены в локальную БД");
                         } catch (Exception e) {
                             Log.e(TAG, "Ошибка сохранения заказов", e);
                         }
-                    });
+                    }).start();
                 }
             }
             @Override
