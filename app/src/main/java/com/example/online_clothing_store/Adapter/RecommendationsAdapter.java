@@ -193,6 +193,12 @@ public class RecommendationsAdapter extends RecyclerView.Adapter<Recommendations
         executor.shutdown();
     }
 
+    public void updateProducts(List<Product> newProducts) {
+        this.productList.clear();
+        this.productList.addAll(newProducts);
+        notifyDataSetChanged();
+    }
+
     static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivProductImage;
         TextView tvTitle;

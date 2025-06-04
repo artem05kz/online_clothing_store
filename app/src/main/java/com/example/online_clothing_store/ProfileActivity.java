@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 public class ProfileActivity extends AppCompatActivity {
-
+    private static final String TAG = "ProfileActivity";
     private TextView tvUserName, tvAddress;
     private LinearLayout favoritesContainer, ordersContainer;
     private int currentUserId;
@@ -41,7 +41,16 @@ public class ProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
-        // Получаем ID пользователя
+        initializeViews();
+        setupClickListeners();
+        loadUserData();
+        loadFavorites();
+        loadOrderHistory();
+
+        syncHelper = new SyncHelper(this);
+    }
+
+    private void initializeViews() {
         SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
         currentUserId = prefs.getInt("user_id", -1);
 
@@ -60,22 +69,17 @@ public class ProfileActivity extends AppCompatActivity {
         tvFavoritesCount = findViewById(R.id.tvFavoritesCount);
         tvCartCount = findViewById(R.id.tvCartCount);
         tvOrdersCount = findViewById(R.id.tvOrdersCount);
+    }
 
-        ImageButton ibEdit = findViewById(R.id.ibEdit);
-        ibEdit.setOnClickListener(v -> {
-            Toast.makeText(ProfileActivity.this,
-                    "Редактирование профиля",
-                    Toast.LENGTH_SHORT).show();
-        });
-        ibEdit.setOnClickListener(v -> {
-            startActivity(new Intent(this, EditProfileActivity.class));
-        });
+    private void setupClickListeners() {
+        if (ibEdit != null) {
+            ibEdit.setOnClickListener(v -> {
+                Intent intent = new Intent(this, EditProfileActivity.class);
+                startActivity(intent);
+            });
+        }
+
         setupMenuButtons();
-        loadUserData();
-        loadFavorites();
-        loadOrderHistory();
-
-        syncHelper = new SyncHelper(this);
     }
 
     @Override
@@ -88,12 +92,12 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void syncUserData() {
-        Log.d("ProfileActivity", "Загрузка данных из локальной БД");
+        Log.d(TAG, "Загрузка данных из локальной БД");
         loadUserData();
     }
 
     private void loadUserData() {
-        Log.d("ProfileActivity", "Загрузка данных пользователя");
+        Log.d(TAG, "Загрузка данных пользователя");
         int userId = getUserId();
         if (userId == -1) {
             Toast.makeText(this, "Ошибка: пользователь не авторизован", Toast.LENGTH_SHORT).show();
@@ -110,16 +114,20 @@ public class ProfileActivity extends AppCompatActivity {
 
                 runOnUiThread(() -> {
                     if (user != null) {
-                        tvUserName.setText(user.getName());
-                        tvAddress.setText(user.getAddress() != null ? user.getAddress() : "Адрес не указан");
+                        if (tvUserName != null) {
+                            tvUserName.setText(user.getName());
+                        }
+                        if (tvAddress != null) {
+                            tvAddress.setText(user.getAddress() != null ? user.getAddress() : "Адрес не указан");
+                        }
                     }
                     updateFavoritesCount(favorites.size());
                     updateCartCount(cartItems.size());
                     updateOrdersCount(orders.size());
-                    Log.d("ProfileActivity", "Данные пользователя загружены и отображены");
+                    Log.d(TAG, "Данные пользователя загружены и отображены");
                 });
             } catch (Exception e) {
-                Log.e("ProfileActivity", "Ошибка загрузки данных", e);
+                Log.e(TAG, "Ошибка загрузки данных", e);
                 runOnUiThread(() -> {
                     Toast.makeText(this, "Ошибка загрузки данных", Toast.LENGTH_SHORT).show();
                 });
@@ -128,95 +136,154 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void loadFavorites() {
+        if (favoritesContainer == null) return;
+
         new Thread(() -> {
-            AppDatabase db = AppDatabase.getInstance(this);
-            FavoriteDao favoriteDao = db.favoriteDao();
-            List<Product> favoriteProducts = favoriteDao.getFavoriteProductsForUser(currentUserId);
+            try {
+                AppDatabase db = AppDatabase.getInstance(this);
+                FavoriteDao favoriteDao = db.favoriteDao();
+                List<Product> favoriteProducts = favoriteDao.getFavoriteProductsForUser(currentUserId);
 
-            runOnUiThread(() -> {
-                favoritesContainer.removeAllViews();
-                LayoutInflater inflater = LayoutInflater.from(this);
+                runOnUiThread(() -> {
+                    favoritesContainer.removeAllViews();
+                    LayoutInflater inflater = LayoutInflater.from(this);
 
-                for (Product product : favoriteProducts) {
-                    View favoriteView = inflater.inflate(R.layout.item_favorite, favoritesContainer, false);
+                    for (Product product : favoriteProducts) {
+                        View favoriteView = inflater.inflate(R.layout.item_favorite, favoritesContainer, false);
 
-                    TextView tvProductName = favoriteView.findViewById(R.id.tvProductName);
-                    TextView tvProductPrice = favoriteView.findViewById(R.id.tvProductPrice);
-                    ImageView ivProductImage = favoriteView.findViewById(R.id.ivProductImage);
+                        TextView tvProductName = favoriteView.findViewById(R.id.tvProductName);
+                        TextView tvProductPrice = favoriteView.findViewById(R.id.tvProductPrice);
+                        ImageView ivProductImage = favoriteView.findViewById(R.id.ivProductImage);
 
-                    tvProductName.setText(product.getName());
-                    tvProductPrice.setText(String.format("%.2f ₽", product.getPrice()));
+                        if (tvProductName != null) {
+                            tvProductName.setText(product.getName());
+                        }
+                        if (tvProductPrice != null) {
+                            tvProductPrice.setText(String.format("%.2f ₽", product.getPrice()));
+                        }
 
-                    if (product.getMainImageUrl() != null && !product.getMainImageUrl().isEmpty()) {
-                        Picasso.get()
-                                .load(product.getMainImageUrl())
-                                .placeholder(R.drawable.placeholder)
-                                .error(R.drawable.error)
-                                .into(ivProductImage);
-                    } else {
-                        ivProductImage.setImageResource(R.drawable.error);
+                        if (ivProductImage != null && product.getMainImageUrl() != null && !product.getMainImageUrl().isEmpty()) {
+                            Picasso.get()
+                                    .load(product.getMainImageUrl())
+                                    .placeholder(R.drawable.placeholder)
+                                    .error(R.drawable.error)
+                                    .into(ivProductImage);
+                        } else if (ivProductImage != null) {
+                            ivProductImage.setImageResource(R.drawable.error);
+                        }
+
+                        favoriteView.setOnClickListener(v -> {
+                            Intent intent = new Intent(ProfileActivity.this, ProductDetailActivity.class);
+                            intent.putExtra("product", product);
+                            startActivity(intent);
+                        });
+
+                        favoritesContainer.addView(favoriteView);
                     }
-
-                    favoriteView.setOnClickListener(v -> {
-                        Intent intent = new Intent(ProfileActivity.this, ProductDetailActivity.class);
-                        intent.putExtra("product", product);
-                        startActivity(intent);
-                    });
-
-                    favoritesContainer.addView(favoriteView);
-                }
-            });
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "Ошибка загрузки избранного", e);
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Ошибка загрузки избранного", Toast.LENGTH_SHORT).show();
+                });
+            }
         }).start();
     }
 
     private void loadOrderHistory() {
+        if (ordersContainer == null) return;
+
+        Log.d(TAG, "Начало загрузки истории заказов для пользователя " + currentUserId);
         new Thread(() -> {
-            AppDatabase db = AppDatabase.getInstance(this);
-            List<Order> orders = db.orderDao().getOrdersByUserId(currentUserId);
-            runOnUiThread(() -> {
-                ordersContainer.removeAllViews();
-                for (Order order : orders) {
-                    View orderCard = LayoutInflater.from(this)
-                            .inflate(R.layout.item_order, ordersContainer, false);
-                    TextView tvOrderId = orderCard.findViewById(R.id.tvOrderId);
-                    TextView tvOrderDate = orderCard.findViewById(R.id.tvOrderDate);
-                    TextView tvOrderStatus = orderCard.findViewById(R.id.tvOrderStatus);
+            try {
+                AppDatabase db = AppDatabase.getInstance(this);
+                List<Order> orders = db.orderDao().getOrdersByUserId(currentUserId);
+                Log.d(TAG, "Получено заказов из БД: " + orders.size());
+                
+                runOnUiThread(() -> {
+                    ordersContainer.removeAllViews();
+                    if (orders.isEmpty()) {
+                        TextView emptyView = new TextView(this);
+                        emptyView.setText("У вас пока нет заказов");
+                        emptyView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                        emptyView.setPadding(0, 20, 0, 20);
+                        ordersContainer.addView(emptyView);
+                        Log.d(TAG, "Отображено сообщение об отсутствии заказов");
+                        return;
+                    }
 
-                    tvOrderId.setText("Заказ #" + order.getId());
-                    tvOrderDate.setText(order.getAddress());
-                    tvOrderStatus.setText(order.getStatus());
+                    for (Order order : orders) {
+                        Log.d(TAG, "Обработка заказа: id=" + order.getId() + 
+                            ", status=" + order.getStatus() + 
+                            ", address=" + order.getAddress());
+                            
+                        View orderCard = LayoutInflater.from(this)
+                                .inflate(R.layout.item_order, ordersContainer, false);
+                        TextView tvOrderId = orderCard.findViewById(R.id.tvOrderId);
+                        TextView tvOrderDate = orderCard.findViewById(R.id.tvOrderDate);
+                        TextView tvOrderStatus = orderCard.findViewById(R.id.tvOrderStatus);
 
-                    ordersContainer.addView(orderCard);
-                }
-            });
+                        if (tvOrderId != null) {
+                            tvOrderId.setText("Заказ #" + order.getId());
+                        }
+                        if (tvOrderDate != null) {
+                            tvOrderDate.setText(order.getAddress());
+                        }
+                        if (tvOrderStatus != null) {
+                            tvOrderStatus.setText(order.getStatus());
+                        }
+
+                        ordersContainer.addView(orderCard);
+                    }
+                    Log.d(TAG, "Заказы успешно отображены");
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "Ошибка загрузки истории заказов", e);
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Ошибка загрузки истории заказов: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            }
         }).start();
     }
+
     private void setupMenuButtons() {
-        findViewById(R.id.imageButtonProfile).setOnClickListener(v -> {
-            loadUserData();
-            loadFavorites();
-            loadOrderHistory();
-        });
+        View profileButton = findViewById(R.id.imageButtonProfile);
+        View hangerButton = findViewById(R.id.imageButtonHanger);
+        View wardrobeButton = findViewById(R.id.imageButtonWardrobe);
+        View cartButton = findViewById(R.id.imageButtonCart);
+        View homeButton = findViewById(R.id.imageButtonHome);
 
-        findViewById(R.id.imageButtonHanger).setOnClickListener(v -> {
-            // Переход в каталог для авторизованных
-            startActivity(new Intent(this, CatalogActivity.class));
-        });
+        if (profileButton != null) {
+            profileButton.setOnClickListener(v -> {
+                loadUserData();
+                loadFavorites();
+                loadOrderHistory();
+            });
+        }
 
-        findViewById(R.id.imageButtonWardrobe).setOnClickListener(v -> {
-            // Переход в гардероб
-            startActivity(new Intent(this, WardrobeActivity.class));
-        });
+        if (hangerButton != null) {
+            hangerButton.setOnClickListener(v -> {
+                startActivity(new Intent(this, CatalogActivity.class));
+            });
+        }
 
-        findViewById(R.id.imageButtonCart).setOnClickListener(v -> {
-            // Переход в корзину
-            startActivity(new Intent(this, CartActivity.class));
-        });
+        if (wardrobeButton != null) {
+            wardrobeButton.setOnClickListener(v -> {
+                startActivity(new Intent(this, WardrobeActivity.class));
+            });
+        }
 
-        findViewById(R.id.imageButtonHome).setOnClickListener(v -> {
-            // Переход в профиль
-            startActivity(new Intent(this, RecommendationsActivity.class));
-        });
+        if (cartButton != null) {
+            cartButton.setOnClickListener(v -> {
+                startActivity(new Intent(this, CartActivity.class));
+            });
+        }
+
+        if (homeButton != null) {
+            homeButton.setOnClickListener(v -> {
+                startActivity(new Intent(this, RecommendationsActivity.class));
+            });
+        }
     }
 
     private int getUserId() {

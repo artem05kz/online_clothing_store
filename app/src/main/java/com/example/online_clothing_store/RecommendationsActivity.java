@@ -31,6 +31,7 @@ import com.squareup.picasso.Picasso;
 import com.example.online_clothing_store.sync.SyncHelper;
 
 public class RecommendationsActivity extends AppCompatActivity {
+    private static final String TAG = "RecommendationsActivity";
 
     private RecyclerView newArrivalsList;
     private RecyclerView recommendationsList;
@@ -43,6 +44,8 @@ public class RecommendationsActivity extends AppCompatActivity {
     private ViewPager bannerPager;
     private BannerPagerAdapter bannerAdapter;
     private Promo currentPromo;
+    private boolean isLoadingProducts = false;
+    private boolean isLoadingBanners = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,15 +83,18 @@ public class RecommendationsActivity extends AppCompatActivity {
     }
 
     private void loadPromoBanners() {
+        if (isLoadingBanners) return;
+        isLoadingBanners = true;
+
         executor.execute(() -> {
             try {
                 AppDatabase db = AppDatabase.getInstance(this);
                 PromoDao promoDao = db.promoDao();
                 List<Promo> promos = promoDao.getAllPromos();
                 
-                Log.d("RecommendationsActivity", "Загружено промо-баннеров: " + promos.size());
+                Log.d(TAG, "Загружено промо-баннеров: " + promos.size());
                 for (Promo promo : promos) {
-                    Log.d("RecommendationsActivity", "Промо: id=" + promo.id + 
+                    Log.d(TAG, "Промо: id=" + promo.id + 
                         ", code=" + promo.code + 
                         ", imageUrl=" + promo.imageUrl + 
                         ", isActive=" + promo.isActive);
@@ -99,42 +105,59 @@ public class RecommendationsActivity extends AppCompatActivity {
                         bannerAdapter = new BannerPagerAdapter(this, promos);
                         bannerPager.setAdapter(bannerAdapter);
                         bannerPager.setVisibility(View.VISIBLE);
-                        Log.d("RecommendationsActivity", "Баннеры установлены в ViewPager");
+                        Log.d(TAG, "Баннеры установлены в ViewPager");
                     } else {
                         bannerPager.setVisibility(View.GONE);
-                        Log.d("RecommendationsActivity", "Нет активных промо-баннеров");
+                        Log.d(TAG, "Нет активных промо-баннеров");
                     }
+                    isLoadingBanners = false;
                 });
             } catch (Exception e) {
-                Log.e("RecommendationsActivity", "Ошибка загрузки промо-баннеров", e);
+                Log.e(TAG, "Ошибка загрузки промо-баннеров", e);
                 runOnUiThread(() -> {
                     bannerPager.setVisibility(View.GONE);
+                    isLoadingBanners = false;
                 });
             }
         });
     }
 
     private void loadProducts() {
+        if (isLoadingProducts) return;
+        isLoadingProducts = true;
+
+        Log.d(TAG, "Начало загрузки продуктов");
         executor.execute(() -> {
             try {
                 AppDatabase db = AppDatabase.getInstance(this);
-                ProductDao productDao = db.productDao();
-                List<Product> newProducts = productDao.getNewArrivals();
-                List<Product> recommendedProducts = productDao.getRecommendedProducts();
+                List<Product> newArrivals = db.productDao().getNewArrivals();
+                List<Product> recommended = db.productDao().getRecommendedProducts();
+                
+                Log.d(TAG, "Загружено новых поступлений: " + newArrivals.size());
+                Log.d(TAG, "Загружено рекомендуемых товаров: " + recommended.size());
 
                 runOnUiThread(() -> {
-                    // Новые поступления
-                    newArrivalsAdapter = new ProductAdapter(this, newProducts, isGuestMode, currentUserId, true);
-                    newArrivalsList.setAdapter(newArrivalsAdapter);
+                    if (newArrivalsAdapter == null) {
+                        newArrivalsAdapter = new ProductAdapter(this, newArrivals, isGuestMode, currentUserId, true);
+                        newArrivalsList.setAdapter(newArrivalsAdapter);
+                    } else {
+                        newArrivalsAdapter.updateProducts(newArrivals);
+                    }
 
-                    // Рекомендации
-                    recommendedAdapter = new RecommendationsAdapter(this, recommendedProducts, isGuestMode, currentUserId);
-                    recommendationsList.setAdapter(recommendedAdapter);
+                    if (recommendedAdapter == null) {
+                        recommendedAdapter = new RecommendationsAdapter(this, recommended, isGuestMode, currentUserId);
+                        recommendationsList.setAdapter(recommendedAdapter);
+                    } else {
+                        recommendedAdapter.updateProducts(recommended);
+                    }
+                    isLoadingProducts = false;
                 });
-
             } catch (Exception e) {
-                Log.e("RecommendationsActivity", "Ошибка загрузки продуктов", e);
-                runOnUiThread(() -> Toast.makeText(this, "Ошибка загрузки рекомендаций", Toast.LENGTH_SHORT).show());
+                Log.e(TAG, "Ошибка загрузки продуктов", e);
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Ошибка загрузки продуктов", Toast.LENGTH_SHORT).show();
+                    isLoadingProducts = false;
+                });
             }
         });
     }
@@ -142,15 +165,23 @@ public class RecommendationsActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        loadProducts();
-        loadPromoBanners();
+        if (!isLoadingProducts) {
+            loadProducts();
+        }
+        if (!isLoadingBanners) {
+            loadPromoBanners();
+        }
     }
 
     private void setupMenuButtons() {
         findViewById(R.id.imageButtonHome).setOnClickListener(v -> {
             // Уже на главной - обновляем страницу
-            loadProducts();
-            loadPromoBanners();
+            if (!isLoadingProducts) {
+                loadProducts();
+            }
+            if (!isLoadingBanners) {
+                loadPromoBanners();
+            }
         });
 
         findViewById(R.id.imageButtonHanger).setOnClickListener(v -> {

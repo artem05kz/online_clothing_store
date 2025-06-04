@@ -210,4 +210,10 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
     public void shutdownExecutor() {
         executor.shutdown();
     }
+
+    public void updateProducts(List<Product> newProducts) {
+        this.productList.clear();
+        this.productList.addAll(newProducts);
+        notifyDataSetChanged();
+    }
 }

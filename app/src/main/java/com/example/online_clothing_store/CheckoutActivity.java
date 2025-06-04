@@ -15,8 +15,10 @@ import com.example.online_clothing_store.database.entities.OrderItem;
 import com.example.online_clothing_store.database.entities.User;
 import com.example.online_clothing_store.sync.SyncHelper;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 public class CheckoutActivity extends AppCompatActivity {
+    private static final String TAG = "CheckoutActivity";
     private EditText addressInput;
     private Button confirmOrderButton;
     private int currentUserId;
@@ -58,13 +60,17 @@ public class CheckoutActivity extends AppCompatActivity {
 
             new Thread(() -> {
                 try {
+                    Log.d(TAG, "Начало создания заказа для пользователя " + currentUserId);
+                    
                     // Создаем заказ
                     Order order = new Order(currentUserId, address);
                     order.setId(null);
                     long orderId = db.orderDao().insert(order);
+                    Log.d(TAG, "Заказ создан с ID: " + orderId);
 
                     // Получаем товары из корзины
                     List<Cart> cartItems = db.cartDao().getCartItemsByUserId(currentUserId);
+                    Log.d(TAG, "Получено товаров из корзины: " + cartItems.size());
 
                     // Создаем элементы заказа
                     for (Cart cartItem : cartItems) {
@@ -74,24 +80,43 @@ public class CheckoutActivity extends AppCompatActivity {
                         orderItem.setQuantity(cartItem.getQuantity());
                         db.orderItemDao().insert(orderItem);
                     }
+                    Log.d(TAG, "Элементы заказа созданы");
 
                     // Очищаем корзину
                     db.cartDao().deleteCartByUserId(currentUserId);
+                    Log.d(TAG, "Корзина очищена");
 
                     // Синхронизируем с сервером
                     SyncHelper syncHelper = new SyncHelper(this);
-                    syncHelper.syncOrders(currentUserId);
-                    syncHelper.syncCart(currentUserId);
+                    CountDownLatch syncLatch = new CountDownLatch(2);
+                    
+                    // Синхронизация заказов
+                    new Thread(() -> {
+                        syncHelper.syncOrders(currentUserId);
+                        syncLatch.countDown();
+                    }).start();
+                    
+                    // Синхронизация корзины
+                    new Thread(() -> {
+                        syncHelper.syncCart(currentUserId);
+                        syncLatch.countDown();
+                    }).start();
+
+                    // Ждем завершения синхронизации
+                    syncLatch.await();
+                    Log.d(TAG, "Синхронизация завершена");
 
                     runOnUiThread(() -> {
                         Toast.makeText(this, "Заказ успешно оформлен", Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(this, ProfileActivity.class));
+                        Intent intent = new Intent(this, ProfileActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
                         finish();
                     });
                 } catch (Exception e) {
-                    Log.e("CheckoutActivity", "Ошибка при создании заказа", e);
+                    Log.e(TAG, "Ошибка при создании заказа", e);
                     runOnUiThread(() -> {
-                        Toast.makeText(this, "Ошибка при создании заказа", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Ошибка при создании заказа: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     });
                 }
             }).start();
