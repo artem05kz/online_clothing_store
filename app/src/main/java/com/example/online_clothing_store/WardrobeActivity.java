@@ -313,6 +313,7 @@ public class WardrobeActivity extends AppCompatActivity {
                     cartItem.setUserId(currentUserId);
                     cartItem.setProductId(hat.getId());
                     cartItem.setQuantity(1);
+                    cartItem.setPrice(hat.getPrice());
                     db.cartDao().insert(cartItem);
                     addedAny[0] = true;
                     Log.d("WardrobeActivity", "Добавлена шапка в корзину: " + hat.getName() + " (id=" + hat.getId() + ")");
@@ -325,6 +326,7 @@ public class WardrobeActivity extends AppCompatActivity {
                     cartItem.setUserId(currentUserId);
                     cartItem.setProductId(top.getId());
                     cartItem.setQuantity(1);
+                    cartItem.setPrice(top.getPrice());
                     db.cartDao().insert(cartItem);
                     addedAny[0] = true;
                     Log.d("WardrobeActivity", "Добавлена верхняя одежда в корзину: " + top.getName() + " (id=" + top.getId() + ")");
@@ -337,6 +339,7 @@ public class WardrobeActivity extends AppCompatActivity {
                     cartItem.setUserId(currentUserId);
                     cartItem.setProductId(bottom.getId());
                     cartItem.setQuantity(1);
+                    cartItem.setPrice(bottom.getPrice());
                     db.cartDao().insert(cartItem);
                     addedAny[0] = true;
                     Log.d("WardrobeActivity", "Добавлена нижняя одежда в корзину: " + bottom.getName() + " (id=" + bottom.getId() + ")");
@@ -349,10 +352,11 @@ public class WardrobeActivity extends AppCompatActivity {
                     cartItem.setUserId(currentUserId);
                     cartItem.setProductId(shoe.getId());
                     cartItem.setQuantity(1);
+                    cartItem.setPrice(shoe.getPrice());
                     db.cartDao().insert(cartItem);
                     addedAny[0] = true;
                     Log.d("WardrobeActivity", "Добавлена обувь в корзину: " + shoe.getName() + " (id=" + shoe.getId() + ")");
-            }
+                }
 
                 runOnUiThread(() -> {
                     if (addedAny[0]) {

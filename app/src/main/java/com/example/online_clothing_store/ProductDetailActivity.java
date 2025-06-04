@@ -81,6 +81,7 @@ public class ProductDetailActivity extends AppCompatActivity {
                     cartItem.setUserId(currentUserId);
                     cartItem.setProductId(product.getId());
                     cartItem.setQuantity(1);
+                    cartItem.setPrice(product.getPrice());
                     db.cartDao().insert(cartItem);
                 }
                 runOnUiThread(() -> {

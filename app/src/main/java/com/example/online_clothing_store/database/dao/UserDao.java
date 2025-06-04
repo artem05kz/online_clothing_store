@@ -11,12 +11,12 @@ public interface UserDao {
     long insert(User user);
     @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
     User getUserByEmail(String email);
-    @Query("SELECT * FROM users WHERE id = :userId LIMIT 1")
-    User getUserById(int userId);
+    @Query("SELECT * FROM users WHERE id = :id")
+    User getUserById(int id);
     @Update
     void update(User user);
     @Query("SELECT * FROM users")
-    List<User> getAllUsers();
+    List<User> getAll();
     @Query("DELETE FROM users")
     void deleteAll();
     @Insert(onConflict = OnConflictStrategy.REPLACE)

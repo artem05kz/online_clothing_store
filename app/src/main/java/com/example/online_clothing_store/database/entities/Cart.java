@@ -42,6 +42,9 @@ public class Cart implements Serializable {
     @ColumnInfo(name = "quantity")
     private int quantity = 1;
 
+    @ColumnInfo(name = "price")
+    private double price;
+
     // Геттеры и сеттеры
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -54,4 +57,7 @@ public class Cart implements Serializable {
 
     public int getQuantity() { return quantity; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
+
+    public double getPrice() { return price; }
+    public void setPrice(double price) { this.price = price; }
 }

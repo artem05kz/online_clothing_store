@@ -15,12 +15,15 @@ import com.example.online_clothing_store.database.entities.Cart;
 import com.example.online_clothing_store.database.entities.Product;
 import com.squareup.picasso.Picasso;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder> {
     private List<Cart> cartItems;
     private Context context;
     private OnDeleteListener deleteListener;
     private OnQuantityChangeListener quantityChangeListener;
+    private Map<Integer, Product> productCache;
 
     public interface OnDeleteListener {
         void onDelete(Cart cartItem);
@@ -34,6 +37,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
         this.cartItems = cartItems;
         this.deleteListener = deleteListener;
         this.quantityChangeListener = quantityChangeListener;
+        this.productCache = new HashMap<>();
     }
 
     @NonNull
@@ -50,6 +54,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
         new Thread(() -> {
             AppDatabase db = AppDatabase.getInstance(context);
             Product product = db.productDao().getProductById(cartItem.getProductId());
+            productCache.put(cartItem.getProductId(), product);
             ((android.app.Activity) context).runOnUiThread(() -> {
                 if (product != null) {
                     holder.itemName.setText(product.getName());
@@ -69,14 +74,28 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
 
         holder.increaseButton.setOnClickListener(v -> {
             int newQuantity = cartItem.getQuantity() + 1;
-            quantityChangeListener.onQuantityChanged(cartItem, newQuantity);
-            holder.quantityText.setText(String.valueOf(newQuantity));
+            cartItem.setQuantity(newQuantity);
+            Product product = productCache.get(cartItem.getProductId());
+            if (product != null) {
+                cartItem.setPrice(product.getPrice() * newQuantity);
+                quantityChangeListener.onQuantityChanged(cartItem, newQuantity);
+                holder.quantityText.setText(String.valueOf(newQuantity));
+                holder.itemPrice.setText(String.format("%.2f ₽", product.getPrice() * newQuantity));
+            }
         });
 
         holder.decreaseButton.setOnClickListener(v -> {
             int newQuantity = cartItem.getQuantity() - 1;
-            quantityChangeListener.onQuantityChanged(cartItem, newQuantity);
-            holder.quantityText.setText(String.valueOf(newQuantity));
+            if (newQuantity > 0) {
+                cartItem.setQuantity(newQuantity);
+                Product product = productCache.get(cartItem.getProductId());
+                if (product != null) {
+                    cartItem.setPrice(product.getPrice() * newQuantity);
+                    quantityChangeListener.onQuantityChanged(cartItem, newQuantity);
+                    holder.quantityText.setText(String.valueOf(newQuantity));
+                    holder.itemPrice.setText(String.format("%.2f ₽", product.getPrice() * newQuantity));
+                }
+            }
         });
     }
 

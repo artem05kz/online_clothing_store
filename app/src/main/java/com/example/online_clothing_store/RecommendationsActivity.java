@@ -29,6 +29,8 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import com.squareup.picasso.Picasso;
 import com.example.online_clothing_store.sync.SyncHelper;
+import android.app.ProgressDialog;
+import java.util.ArrayList;
 
 public class RecommendationsActivity extends AppCompatActivity {
     private static final String TAG = "RecommendationsActivity";
@@ -46,11 +48,18 @@ public class RecommendationsActivity extends AppCompatActivity {
     private Promo currentPromo;
     private boolean isLoadingProducts = false;
     private boolean isLoadingBanners = false;
+    private ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recommendations);
+
+        // Инициализация ProgressDialog
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Загрузка данных...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
 
         // Получаем ID пользователя
         SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
@@ -75,8 +84,8 @@ public class RecommendationsActivity extends AppCompatActivity {
         executor = Executors.newFixedThreadPool(2);
 
         // Загрузка данных
-        loadProducts();
         loadPromoBanners();
+        loadProducts();
 
         // Настройка кнопок навигации
         setupMenuButtons();
@@ -123,43 +132,57 @@ public class RecommendationsActivity extends AppCompatActivity {
     }
 
     private void loadProducts() {
-        if (isLoadingProducts) return;
-        isLoadingProducts = true;
-
         Log.d(TAG, "Начало загрузки продуктов");
-        executor.execute(() -> {
+        
+        // Проверяем, завершена ли синхронизация
+        new Thread(() -> {
             try {
-            AppDatabase db = AppDatabase.getInstance(this);
-                List<Product> newArrivals = db.productDao().getNewArrivals();
-                List<Product> recommended = db.productDao().getRecommendedProducts();
+                Thread.sleep(1000);
                 
+                // Загружаем новые поступления
+                AppDatabase db = AppDatabase.getInstance(this);
+                List<Product> newArrivals = db.productDao().getNewArrivals();
                 Log.d(TAG, "Загружено новых поступлений: " + newArrivals.size());
+                
+                // Загружаем рекомендуемые товары
+                List<Product> recommended = db.productDao().getRecommendedProducts();
                 Log.d(TAG, "Загружено рекомендуемых товаров: " + recommended.size());
-
+                
+                // Если данные не загрузились, пробуем еще раз через 1 секунду
+                if (newArrivals.isEmpty() && recommended.isEmpty()) {
+                    Thread.sleep(1000);
+                    newArrivals = db.productDao().getNewArrivals();
+                    recommended = db.productDao().getRecommendedProducts();
+                    Log.d(TAG, "Повторная попытка загрузки - новых поступлений: " + newArrivals.size() + 
+                          ", рекомендуемых товаров: " + recommended.size());
+                }
+                
+                // Создаем финальные копии для использования в лямбда-выражении
+                final List<Product> finalNewArrivals = new ArrayList<>(newArrivals);
+                final List<Product> finalRecommended = new ArrayList<>(recommended);
+                
                 runOnUiThread(() -> {
-                    if (newArrivalsAdapter == null) {
-                        newArrivalsAdapter = new ProductAdapter(this, newArrivals, isGuestMode, currentUserId, true);
-                        newArrivalsList.setAdapter(newArrivalsAdapter);
-                    } else {
-                        newArrivalsAdapter.updateProducts(newArrivals);
+                    newArrivalsAdapter = new ProductAdapter(this, finalNewArrivals, isGuestMode, currentUserId, true);
+                    newArrivalsList.setAdapter(newArrivalsAdapter);
+                    
+                    recommendedAdapter = new RecommendationsAdapter(this, finalRecommended, isGuestMode, currentUserId);
+                    recommendationsList.setAdapter(recommendedAdapter);
+                    
+                    // Скрываем ProgressDialog после загрузки всех данных
+                    if (progressDialog != null && progressDialog.isShowing()) {
+                        progressDialog.dismiss();
                     }
-
-                    if (recommendedAdapter == null) {
-                        recommendedAdapter = new RecommendationsAdapter(this, recommended, isGuestMode, currentUserId);
-                        recommendationsList.setAdapter(recommendedAdapter);
-                    } else {
-                        recommendedAdapter.updateProducts(recommended);
-                    }
-                    isLoadingProducts = false;
                 });
             } catch (Exception e) {
                 Log.e(TAG, "Ошибка загрузки продуктов", e);
                 runOnUiThread(() -> {
-                    Toast.makeText(this, "Ошибка загрузки продуктов", Toast.LENGTH_SHORT).show();
-                    isLoadingProducts = false;
+                    if (progressDialog != null && progressDialog.isShowing()) {
+                        progressDialog.dismiss();
+                    }
+                    Toast.makeText(this, "Ошибка загрузки данных", Toast.LENGTH_SHORT).show();
                 });
             }
-        });
+        }).start();
     }
 
     @Override

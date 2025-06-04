@@ -1,6 +1,8 @@
 package com.example.online_clothing_store.sync;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import com.example.online_clothing_store.api.ApiClient;
 import com.example.online_clothing_store.api.ApiService;
@@ -12,6 +14,7 @@ import retrofit2.Response;
 
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.ArrayList;
 
 public class SyncHelper {
     private final ApiService apiService;
@@ -108,22 +111,10 @@ public class SyncHelper {
 
     // --- PRODUCTS ---
     public void syncProducts() {
-        Log.d(TAG, "Начало синхронизации продуктов");
+        // Сначала синхронизируем категории
+        syncCategories();
         
-        // Проверяем наличие категорий в БД
-        Executors.newSingleThreadExecutor().execute(() -> {
-            int categoryCount = db.categoryDao().getCategoryCount();
-            if (categoryCount == 0) {
-                // Если категорий нет, синхронизируем их
-                syncCategories();
-            } else {
-                // Если категории есть, сразу получаем продукты
-                syncProductsAfterCategories();
-            }
-        });
-    }
-
-    private void syncProductsAfterCategories() {
+        // Затем синхронизируем продукты
         apiService.getProducts().enqueue(new Callback<List<Product>>() {
             @Override
             public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
@@ -131,16 +122,18 @@ public class SyncHelper {
                     List<Product> products = response.body();
                     Log.d(TAG, "Получено продуктов с сервера: " + products.size());
                     
-                    // Сохраняем продукты в локальную БД
-                    Executors.newSingleThreadExecutor().execute(() -> {
-                        try {
-                            db.productDao().deleteAll();
-                            db.productDao().insertAll(products.toArray(new Product[0]));
-                            Log.d(TAG, "Продукты сохранены в локальную БД");
-                        } catch (Exception e) {
-                            Log.e(TAG, "Ошибка сохранения продуктов", e);
-                        }
-                    });
+                    // Добавляем небольшую задержку для гарантии завершения синхронизации категорий
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        // Выполняем операции с БД в фоновом потоке
+                        Executors.newSingleThreadExecutor().execute(() -> {
+                            try {
+                                db.productDao().insertAll(products.toArray(new Product[0]));
+                                Log.d(TAG, "Продукты сохранены в локальную БД");
+                            } catch (Exception e) {
+                                Log.e(TAG, "Ошибка сохранения продуктов", e);
+                            }
+                        });
+                    }, 500); // 500мс задержка
                 }
             }
 
@@ -235,7 +228,94 @@ public class SyncHelper {
     public void syncOrders(int userId) {
         Log.d(TAG, "Начало синхронизации заказов для пользователя " + userId);
         
-        // Сначала получаем данные с сервера
+        // Сначала отправляем локальные данные на сервер
+        Executors.newSingleThreadExecutor().execute(() -> {
+            try {
+                List<Order> localOrders = db.orderDao().getOrdersByUserId(userId);
+                Log.d(TAG, "Локальные заказы для синхронизации: " + localOrders.size());
+
+                if (!localOrders.isEmpty()) {
+                    // Подготавливаем заказы для отправки
+                    List<Order> ordersToSend = new ArrayList<>();
+                    for (Order order : localOrders) {
+                        // Создаем новый объект Order для отправки
+                        Order orderToSend = new Order();
+                        orderToSend.setId(order.getId());
+                        
+                        // Получаем объект User
+                        User user = db.userDao().getUserById(order.getUserId());
+                        if (user == null) {
+                            Log.e(TAG, "Пользователь не найден для заказа: " + order.getId());
+                            continue;
+                        }
+                        
+                        orderToSend.setUserId(order.getUserId());
+                        orderToSend.setUser(user);
+                        orderToSend.setAddress(order.getAddress());
+                        orderToSend.setOrderDate(order.getOrderDate());
+                        orderToSend.setStatus(order.getStatus());
+                        orderToSend.setTotalAmount(order.getTotalAmount());
+                        
+                        // Получаем элементы заказа
+                        List<OrderItem> orderItems = db.orderItemDao().getOrderItemsByOrderId(order.getId());
+                        if (orderItems != null && !orderItems.isEmpty()) {
+                            // Добавляем элементы заказа
+                            for (OrderItem item : orderItems) {
+                                orderToSend.addOrderItem(item);
+                            }
+                        }
+                        
+                        // Логируем данные заказа перед отправкой
+                        Log.d(TAG, "Подготовка заказа для отправки: id=" + orderToSend.getId() + 
+                            ", userId=" + orderToSend.getUserId() + 
+                            ", address=" + orderToSend.getAddress() + 
+                            ", date=" + orderToSend.getOrderDate() + 
+                            ", status=" + orderToSend.getStatus() + 
+                            ", items=" + (orderToSend.getOrderItems() != null ? orderToSend.getOrderItems().size() : 0));
+                        
+                        // Проверяем наличие всех необходимых полей
+                        if (orderToSend.getUserId() <= 0 || 
+                            orderToSend.getAddress() == null || 
+                            orderToSend.getAddress().isEmpty() ||
+                            orderToSend.getOrderDate() == null || 
+                            orderToSend.getOrderDate().isEmpty() ||
+                            orderToSend.getStatus() == null || 
+                            orderToSend.getStatus().isEmpty() ||
+                            orderToSend.getOrderItems() == null || 
+                            orderToSend.getOrderItems().isEmpty()) {
+                            Log.e(TAG, "Заказ не содержит всех необходимых полей: " + orderToSend);
+                            continue;
+                        }
+                        
+                        ordersToSend.add(orderToSend);
+                    }
+
+                    if (!ordersToSend.isEmpty()) {
+                        // Отправляем заказы на сервер
+                        Response<Void> response = apiService.syncOrders(ordersToSend).execute();
+                        if (response.isSuccessful()) {
+                            Log.d(TAG, "Заказы успешно отправлены на сервер");
+                        } else {
+                            Log.e(TAG, "Ошибка отправки заказов на сервер: " + response.code());
+                            if (response.errorBody() != null) {
+                                String errorBody = response.errorBody().string();
+                                Log.e(TAG, "Тело ошибки: " + errorBody);
+                            }
+                        }
+                    } else {
+                        Log.e(TAG, "Нет заказов для отправки после проверки полей");
+                    }
+                }
+
+                // Затем получаем обновленные данные с сервера
+                fetchOrdersFromServer(userId);
+            } catch (Exception e) {
+                Log.e(TAG, "Ошибка синхронизации заказов", e);
+            }
+        });
+    }
+
+    private void fetchOrdersFromServer(int userId) {
         apiService.getOrders(userId).enqueue(new Callback<List<Order>>() {
             @Override
             public void onResponse(Call<List<Order>> call, Response<List<Order>> response) {
@@ -259,29 +339,6 @@ public class SyncHelper {
             @Override
             public void onFailure(Call<List<Order>> call, Throwable t) {
                 Log.e(TAG, "Ошибка получения заказов", t);
-            }
-        });
-
-        // Затем отправляем локальные данные на сервер
-        Executors.newSingleThreadExecutor().execute(() -> {
-            List<Order> localOrders = db.orderDao().getOrdersByUserId(userId);
-            Log.d(TAG, "Локальные заказы для синхронизации: " + localOrders.size());
-            
-            if (!localOrders.isEmpty()) {
-                apiService.syncOrders(localOrders).enqueue(new Callback<Void>() {
-                    @Override
-                    public void onResponse(Call<Void> call, Response<Void> response) {
-                        if (response.isSuccessful()) {
-                            Log.d(TAG, "Заказы успешно отправлены на сервер");
-                        } else {
-                            Log.e(TAG, "Ошибка отправки заказов на сервер: " + response.code());
-                        }
-                    }
-                    @Override
-                    public void onFailure(Call<Void> call, Throwable t) {
-                        Log.e(TAG, "Ошибка отправки заказов на сервер", t);
-                    }
-                });
             }
         });
     }

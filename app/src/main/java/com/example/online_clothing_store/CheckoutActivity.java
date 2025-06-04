@@ -63,27 +63,33 @@ public class CheckoutActivity extends AppCompatActivity {
                     Log.d(TAG, "Начало создания заказа для пользователя " + currentUserId);
                     
                     // Создаем заказ
-                Order order = new Order(currentUserId, address);
-                order.setId(null);
-                long orderId = db.orderDao().insert(order);
+                    Order order = new Order();
+                    order.setUserId(currentUserId);
+                    order.setAddress(address);
+                    order.setOrderDate(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()));
+                    order.setStatus("В обработке");
+                    List<Cart> cartItems = db.cartDao().getCartItemsByUserId(currentUserId);
+                    order.setTotalAmount(calculateTotalAmount(cartItems));
+                    long orderId = db.orderDao().insert(order);
                     Log.d(TAG, "Заказ создан с ID: " + orderId);
 
                     // Получаем товары из корзины
-                List<Cart> cartItems = db.cartDao().getCartItemsByUserId(currentUserId);
+                    cartItems = db.cartDao().getCartItemsByUserId(currentUserId);
                     Log.d(TAG, "Получено товаров из корзины: " + cartItems.size());
 
                     // Создаем элементы заказа
-                for (Cart cartItem : cartItems) {
-                    OrderItem orderItem = new OrderItem();
-                    orderItem.setOrderId((int) orderId);
-                    orderItem.setProductId(cartItem.getProductId());
-                    orderItem.setQuantity(cartItem.getQuantity());
-                    db.orderItemDao().insert(orderItem);
-                }
+                    for (Cart cartItem : cartItems) {
+                        OrderItem orderItem = new OrderItem();
+                        orderItem.setOrderId((int) orderId);
+                        orderItem.setProductId(cartItem.getProductId());
+                        orderItem.setQuantity(cartItem.getQuantity());
+                        orderItem.setPrice(cartItem.getPrice());
+                        db.orderItemDao().insert(orderItem);
+                    }
                     Log.d(TAG, "Элементы заказа созданы");
 
                     // Очищаем корзину
-                db.cartDao().deleteCartByUserId(currentUserId);
+                    db.cartDao().deleteCartByUserId(currentUserId);
                     Log.d(TAG, "Корзина очищена");
 
                     // Синхронизируем с сервером
@@ -123,5 +129,13 @@ public class CheckoutActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.backButton).setOnClickListener(v -> finish());
+    }
+
+    private double calculateTotalAmount(List<Cart> cartItems) {
+        double total = 0.0;
+        for (Cart item : cartItems) {
+            total += item.getPrice() * item.getQuantity();
+        }
+        return total;
     }
 }
