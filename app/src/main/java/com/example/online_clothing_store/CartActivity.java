@@ -90,6 +90,17 @@ public class CartActivity extends AppCompatActivity {
             }
             return false;
         });
+
+        // Обработка кнопки применения промокода
+        findViewById(R.id.applyPromoButton).setOnClickListener(v -> {
+            String promoCode = promoCodeInput.getText().toString().trim();
+            if (!promoCode.isEmpty()) {
+                checkAndApplyPromo(promoCode);
+            } else {
+                Toast.makeText(this, "Введите промокод", Toast.LENGTH_SHORT).show();
+            }
+        });
+
         setupMenuButtons();
     }
 

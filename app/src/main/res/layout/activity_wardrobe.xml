@@ -190,7 +190,8 @@
                     android:layout_height="wrap_content"
                     android:text="Стоимость образа: 0 ₽"
                     android:textSize="18sp"
-                    android:textStyle="bold"/>
+                    android:textStyle="bold"
+                    android:textColor="@color/black"/>
 
                 <Button
                     android:id="@+id/btnGenerate"
@@ -198,7 +199,8 @@
                     android:layout_height="50dp"
                     android:text="Добавить все в корзину"
                     android:layout_marginTop="12dp"
-                    android:backgroundTint="@color/backgroundDark"/>
+                    android:backgroundTint="@color/backgroundDark"
+                    android:textColor="@color/white"/>
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
