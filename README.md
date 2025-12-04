@@ -110,8 +110,6 @@ implementation 'androidx.work:work-runtime:2.8.1'
 
 ## Скриншоты
 ![login](img/login.png)
-![profile](img/profile.png)
-![rec](img/rec.png)
 ![cart](img/cart.png)
 ![catalog](img/catalog.png)
 
