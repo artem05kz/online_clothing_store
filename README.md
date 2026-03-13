@@ -120,7 +120,7 @@ implementation 'androidx.work:work-runtime:2.8.1'
 - Android Studio Arctic Fox или новее
 - JDK 11+
 - Android SDK 24+
-- Запущенный сервер API (см. [серверный репозиторий](ссылка))
+- Запущенный сервер API (см. [серверный репозиторий](https://github.com/artem05kz/online_clothing_store_database))
 
 ### Шаги установки
 
